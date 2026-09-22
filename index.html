@@ -3,7 +3,8 @@
 <style>
 :root{--bg:#f6f6f7;--card:#fff;--ink:#1a1a1a;--mut:#6b7177;--line:#e3e5e7;--acc:#1f6f5f;--red:#b42318;--amb:#b54708;--grn:#067647;--blu:#175cd3}
 *{box-sizing:border-box}body{margin:0;font:14px/1.45 -apple-system,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink)}
-header{display:flex;justify-content:space-between;align-items:baseline;padding:16px 20px 4px}h1{font-size:18px;margin:0}small{color:var(--mut)}nav .tab{background:none;border:1px solid var(--line);border-radius:20px;padding:6px 14px;margin-left:6px;cursor:pointer;font:inherit;color:var(--mut)}nav .tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}.kv{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;font-size:13px}.kv b{color:var(--mut);font-weight:500}.warn{background:#fff7d6;border:1px solid #f0dc9a;border-radius:8px;padding:8px 12px;margin:8px 0;font-size:13px}
+header{display:flex;justify-content:space-between;align-items:baseline;padding:16px 20px 4px}h1{font-size:18px;margin:0}small{color:var(--mut)}nav .tab{background:none;border:1px solid var(--line);border-radius:20px;padding:6px 14px;margin-left:6px;cursor:pointer;font:inherit;color:var(--mut)}nav .tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}.kv{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;font-size:13px}.kv b{color:var(--mut);font-weight:500}.opp{border:1px solid var(--line);border-radius:10px;background:var(--card);margin:8px 0;overflow:hidden}.opp .hd{display:grid;grid-template-columns:34px 1fr 130px 120px 110px 28px;gap:10px;align-items:center;padding:12px 14px;cursor:pointer}.opp .hd:hover{background:#fafbfb}.opp .rank{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}.opp .t{font-weight:600}.opp .sm{color:var(--mut);font-size:12.5px;margin-top:2px}.opp .amt{text-align:right;font-weight:600;font-size:16px;color:var(--grn)}.opp .amt small{display:block;color:var(--mut);font-weight:400;font-size:11px}.opp .eff{font-size:12px;color:var(--mut)}.dots{letter-spacing:2px;color:var(--acc)}.opp .st{font-size:11px;padding:2px 8px;border-radius:10px;background:#eee;text-align:center;white-space:nowrap}.st.open{background:#e6f4ea;color:var(--grn)}.st.blocked{background:#fff1e0;color:var(--amb)}.st.in_progress{background:#e8f0fe;color:var(--blu)}.st.done{background:#eee;color:#666}.st.not_worth{background:#fde8e6;color:var(--red)}.opp .chev{color:var(--mut);transition:.2s}.opp.open .chev{transform:rotate(90deg)}.opp .body{display:none;padding:0 14px 14px 58px;font-size:13.5px;line-height:1.5}.opp.open .body{display:block}.opp .body h4{margin:12px 0 4px;font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.4px}.opp .body ol{margin:4px 0;padding-left:18px}.opp .body a{color:var(--blu);font-size:12px}.sortbar{display:flex;gap:8px;align-items:center;margin:4px 0 10px;font-size:13px;color:var(--mut)}.sortbar button{font:inherit;font-size:12px;padding:4px 10px;border:1px solid var(--line);border-radius:14px;background:#fff;cursor:pointer}.sortbar button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.warn{background:#fff7d6;border:1px solid #f0dc9a;border-radius:8px;padding:8px 12px;margin:8px 0;font-size:13px}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;padding:12px 20px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;cursor:pointer;transition:.15s}.card:hover{border-color:var(--acc);box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .card.active{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}.card .l{color:var(--mut);font-size:12px}.card .v{font-size:22px;font-weight:600;margin:4px 0 2px}.card .s{font-size:12px;color:var(--mut)}
@@ -19,13 +20,30 @@ tr.style{cursor:pointer}tr.style:hover{background:#fafbfb}tr.var td{color:#444;b
 .season{display:grid;grid-template-columns:120px repeat(12,1fr);gap:2px;font-size:12px}.season div{padding:4px;text-align:center;border-radius:3px}.season .n{text-align:left;color:var(--mut)}
 </style></head><body>
 <div id="gate" style="display:none"><div><b>Alyth Inventory</b><p style="color:#6b7177">Enter the dashboard passphrase.</p><input id="pw" type="password" placeholder="passphrase"><button onclick="unlock()">Open</button><p id="err" style="color:#b42318"></p></div></div>
-<header><h1>Alyth inventory <small id="sub"></small></h1><nav><button class="tab active" onclick="mode('inv')">Inventory</button><button class="tab" onclick="mode('debt')">Debt &amp; financing</button></nav><small id="gen"></small></header>
+<header><h1>Alyth inventory <small id="sub"></small></h1><nav><button class="tab active" onclick="mode('inv')">Inventory</button><button class="tab" onclick="mode('debt')">Debt &amp; financing</button><button class="tab" onclick="mode('sav')">Savings</button></nav><small id="gen"></small></header>
 <div class="cards" id="cards"></div><div class="panel" id="panel"></div>
-<script src="data.enc.js?v=1790096594"></script>
+<script src="data.enc.js?v=1790099698"></script>
 <script>
 const $=s=>document.querySelector(s);const fmt$=x=>'$'+Math.round(x).toLocaleString();const fmtN=x=>Math.round(x).toLocaleString();
 let D=null,view='overview',sortKey=null,sortDir=-1,q='',MODE='inv';
-function mode(m){MODE=m;view=m==='debt'?'pay':'overview';document.querySelectorAll('nav .tab').forEach((b,i)=>b.classList.toggle('active',(i===0)===(m==='inv')));render();}
+function mode(m){MODE=m;view=m==='debt'?'pay':m==='sav'?'sav':'overview';document.querySelectorAll('nav .tab').forEach((b,i)=>b.classList.toggle('active',['inv','debt','sav'][i]===m));render();}
+let SSORT='money';
+function renderSav(){const S=D.sav;const t=S.totals;
+ $('#cards').innerHTML=[
+  {cls:'grn',l:'Identified savings, open items',v:fmt$(t.open)+'/yr',s:fmt$(t.open/12)+' a month across '+t.count_open+' open items'},
+  {cls:'blu',l:'Quick wins',v:fmt$(t.quick)+'/yr',s:t.count_quick+' items that take an hour or less'},
+  {cls:'amb',l:'Waiting on the buyout closing',v:fmt$(t.blocked)+'/yr',s:'unlocks when Alysha is released from the U.S. Bank guaranties'},
+  {cls:'',l:'Banked so far',v:fmt$(t.done)+'/yr',s:'items marked done'}
+ ].map(c=>`<div class="card ${c.cls}" style="cursor:default"><div class="l">${c.l}</div><div class="v">${c.v}</div><div class="s">${c.s}</div></div>`).join('');
+ const items=[...S.items].sort((a,b)=>SSORT==='money'?(b.annual-a.annual)||(a.effort-b.effort):(a.effort-b.effort)||(b.annual-a.annual));
+ let h=`<h2>Where to save money</h2><p class="d">Every dollar figure is recomputed from live balances, purchase levels and inventory on each run. Click a row for the detail, the steps, and the sources. Items are added as opportunities show up.</p>
+ <div class="sortbar">Sort by <button class="${SSORT==='money'?'on':''}" onclick="SSORT='money';render()">most $ saved</button><button class="${SSORT==='ease'?'on':''}" onclick="SSORT='ease';render()">easiest first</button><span style="margin-left:auto">generated ${S.generated}</span></div>`;
+ h+=items.map(r=>opp(r)).join('');
+ if(S.rejected.length){h+='<h2 style="margin-top:18px">Looked at and not worth it</h2>'+S.rejected.map(r=>opp(r,true)).join('');}
+ $('#panel').innerHTML=h;}
+function opp(r,rej){const dots='●'.repeat(r.effort)+'○'.repeat(5-r.effort);const amt=rej?`<div class="amt" style="color:var(--red)">${fmt$(r.annual)}<small>net per year</small></div>`:`<div class="amt">${fmt$(r.annual)}<small>${fmt$(r.monthly)} / month</small></div>`;
+ return `<div class="opp" id="opp_${r.id}"><div class="hd" onclick="this.parentElement.classList.toggle('open')"><div class="rank" style="${rej?'background:#bbb':''}">${rej?'–':r.rank}</div><div><div class="t">${r.title}</div><div class="sm">${r.summary}</div></div>${amt}<div class="eff"><span class="dots">${dots}</span><br>${r.effort_label}</div><div class="st ${r.status}">${r.status.replace('_',' ')}</div><div class="chev">›</div></div>
+ <div class="body">${r.detail?r.detail.split('\n').filter(x=>x.trim()).map(x=>`<p>${x}</p>`).join(''):''}${r.blocked_until?`<div class="warn">Blocked until: ${r.blocked_until}</div>`:''}${r.steps?'<h4>Steps</h4><ol>'+r.steps.map(x=>`<li>${x}</li>`).join('')+'</ol>':''}${r.sources?'<h4>Sources</h4>'+r.sources.map(u=>`<a href="${u}" target="_blank" rel="noopener">${u.replace(/^https?:\/\//,'').split('/')[0]}</a>`).join(' · '):''}<h4>How the number is computed</h4><p><code style="font-size:12px;color:#555">${r.annual_formula||''}</code> <span class="sm">Added ${r.added}.</span></p></div></div>`;}
 const DCARDS=[
  {k:'pay',cls:'grn',l:'How to pay for this PO',v:d=>fmt$(sum(d.fin.summary,'amount')),s:d=>'est. financing cost '+fmt$(sum(d.fin.summary,'est_cost')),d:'Which facility funds each part of the recommended PO, cheapest-first for how long the cash will be out, within the room each one has and the rules in the debt brief.'},
  {k:'stack',cls:'red',l:'Total debt',v:d=>fmt$(d.fin.stack.total_debt),s:d=>'~'+fmt$(d.fin.stack.annual_cost_at_balance)+'/yr cost at today\'s balances',d:'Every facility, its balance and the date it was read. Balances come from the lenders, never from Xero.'},
@@ -48,6 +66,7 @@ const CARDS=[
 ];
 function render(){$('#sub').textContent='· data through '+D.asof+', stock '+D.snapshot;$('#gen').textContent='generated '+D.generated;
  if(MODE==='debt'&&D.fin){return renderDebt();}
+ if(MODE==='sav'&&D.sav){return renderSav();}
  $('#cards').innerHTML=CARDS.map(c=>`<div class="card ${c.cls} ${view===c.k?'active':''}" onclick="show('${c.k}')"><div class="l">${c.l}</div><div class="v">${c.v(D)}</div><div class="s">${c.s(D)}</div></div>`).join('');
  const c=CARDS.find(x=>x.k===view)||CARDS[0];let h=`<h2>${c.l}</h2><p class="d">${c.d}</p>`;
  if(view==='season'){h+=season();}else{h+=table(c);}
