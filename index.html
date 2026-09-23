@@ -32,7 +32,7 @@ tr.style{cursor:pointer}tr.style:hover{background:#fafbfb}tr.var td{color:#444;b
 <div id="gate" style="display:none"><div><b>Alyth Inventory</b><p style="color:#6b7177">Enter the dashboard passphrase.</p><input id="pw" type="password" placeholder="passphrase"><button onclick="unlock()">Open</button><p id="err" style="color:#b42318"></p></div></div>
 <header><h1>Alyth inventory <small id="sub"></small></h1><nav><button class="tab active" onclick="mode('inv')">Inventory</button><button class="tab" onclick="mode('debt')">Debt &amp; financing</button><button class="tab" onclick="mode('sav')">Savings</button></nav><small id="gen"></small></header>
 <div class="cards" id="cards"></div><div class="panel" id="panel"></div>
-<script src="data.enc.js?v=1790179435"></script>
+<script src="data.enc.js?v=1790179490"></script>
 <script>
 const $=s=>document.querySelector(s);
 const TIP={
@@ -146,18 +146,18 @@ function scheduleBlock(){const S=D.schedule;if(!S||!S.labels)return '';const mt=
   h+=`<tr class="style" onclick="tog(this)"><td>${g.product_title}${g.continuing==='yes'?'':' <span class="tag">not on list</span>'}</td><td class="tl">${g.color}${g.extra?' '+g.extra:''}</td><td class="tl">${g.design_type||''}</td><td>${g.sizes}</td><td>${fmtN(g.qty)}</td><td>${fmt$(g.cost)}</td><td class="tl"><small>${SMONTH===0?payFor(g):'decided when placed'}</small></td><td class="tl"><small style="color:#8a6d00">${g.moq_flag||''}</small></td></tr>`;
   for(const l of sizes){h+=`<tr class="var" style="display:none"><td>${l.size} <small style="color:#999">${l.sku||''}</small></td><td colspan="3" class="tl"><small>${l.reason}${l.lands_month?` · lands ~${monthName(S.labels[Math.min(S.labels.length-1,Math.floor(SMONTH+l.lands_month))]||'')}`:''}</small></td><td>${l.qty}</td><td>${fmt$(l.cost)}</td><td></td><td></td></tr>`;}}
  return h+'</table></div>';}
-function flow(left,right,links,opts={}){const W=opts.W||760,rowH=56,H=Math.max(left.length,right.length)*rowH+20,nw=230,xL=0,xR=W-nw;const yL=i=>10+i*rowH,yR=i=>10+i*rowH;const maxA=Math.max(1,...links.map(l=>l.amount||1));
+function flow(left,right,links,opts={}){const W=opts.W||760,rowH=56,H=Math.max(left.length,right.length)*rowH+40,nw=230,xL=0,xR=W-nw;const yL=i=>10+i*rowH,yR=i=>10+i*rowH;const maxA=Math.max(1,...links.map(l=>l.amount||1));
  const node=(n,x,y,src)=>`<g><rect class="node ${src?'src':''}" x="${x}" y="${y}" width="${nw}" height="44"/><text class="lbl" x="${x+12}" y="${y+18}">${n.title}</text><text class="sub" x="${x+12}" y="${y+34}">${n.sub||''}</text>${n.right?`<text class="amt" x="${x+nw-12}" y="${y+18}" text-anchor="end">${n.right}</text>`:''}</g>`;
- let g='';left.forEach((n,i)=>g+=node(n,xL,yL(i),true));right.forEach((n,i)=>g+=node(n,xR,yR(i),false));
+ let paths='',labels='';left.forEach((n,i)=>paths+=node(n,xL,yL(i),true));right.forEach((n,i)=>paths+=node(n,xR,yR(i),false));
  const placed=[];
- links.forEach((l,li)=>{const i=left.findIndex(n=>n.id===l.from),j=right.findIndex(n=>n.id===l.to);if(i<0||j<0)return;const x1=xL+nw,y1=yL(i)+22,x2=xR,y2=yR(j)+22;const mx=(x1+x2)/2;const sw=l.style==='no'?2:Math.min(14,Math.max(3,14*(l.amount||0)/maxA));const col=l.style==='blocked'?'#b5b9be':l.style==='no'?'#e34948':(l.color||'#2a78d6');const dash=l.style==='blocked'?'stroke-dasharray="6 5"':'';
-  g+=`<path class="link" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" style="stroke:${col}" stroke-width="${sw}" ${dash}><title>${l.tip||l.label||''}</title></path>`;
-  // label pill placed along the curve, staggered so neighbours do not overlap
-  const t=[0.5,0.3,0.7,0.4,0.6][li%5];const bx=(1-t)**3*x1+3*(1-t)**2*t*mx+3*(1-t)*t*t*mx+t**3*x2;const by=(1-t)**3*y1+3*(1-t)**2*t*y1+3*(1-t)*t*t*y2+t**3*y2;
+ links.forEach((l,li)=>{const i=left.findIndex(n=>n.id===l.from),j=right.findIndex(n=>n.id===l.to);if(i<0||j<0)return;const x1=xL+nw,y1=yL(i)+22,x2=xR,y2=yR(j)+22;const mx=(x1+x2)/2;const sw=l.style==='no'?2:Math.min(10,Math.max(3,10*(l.amount||0)/maxA));const col=l.style==='blocked'?'#b5b9be':l.style==='no'?'#e34948':(l.color||'#2a78d6');const dash=l.style==='blocked'?'stroke-dasharray="6 5"':'';
+  paths+=`<path class="link" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" style="stroke:${col}" stroke-width="${sw}" ${dash}><title>${l.tip||l.label||''}</title></path>`;
+  const t=[0.5,0.32,0.68,0.42,0.58][li%5];const bx=(1-t)**3*x1+3*(1-t)**2*t*mx+3*(1-t)*t*t*mx+t**3*x2;const by=(1-t)**3*y1+3*(1-t)**2*t*y1+3*(1-t)*t*t*y2+t**3*y2;
   const txt=(l.style==='no'?'✕ ':'→ ')+l.label;const pw=Math.max(70,txt.length*6.6+18);let byy=by;
   for(let k=0;k<6;k++){if(placed.some(p=>Math.abs(p.x-bx)<(p.w+pw)/2+6&&Math.abs(p.y-byy)<26)){byy+=26;}else break;}placed.push({x:bx,y:byy,w:pw});
-  g+=`<g><title>${l.tip||''}</title><rect x="${bx-pw/2}" y="${byy-11}" width="${pw}" height="22" rx="11" fill="#fff" style="stroke:${col}" stroke-width="1.5"/><text x="${bx}" y="${byy+4}" text-anchor="middle" class="amt" style="fill:${l.style==='no'?'#e34948':'#1a1a1a'}">${txt}</text></g>`;});
- return `<svg class="flow" viewBox="0 0 ${W} ${H}">${g}</svg>`;}
+  labels+=`<g><title>${l.tip||''}</title><rect x="${bx-pw/2}" y="${byy-11}" width="${pw}" height="22" rx="11" fill="#fff" style="stroke:${col}" stroke-width="1.5"/><text x="${bx}" y="${byy+4}" text-anchor="middle" class="amt" style="fill:${l.style==='no'?'#e34948':'#1a1a1a'}">${txt}</text></g>`;});
+ const Hh=Math.max(H,...placed.map(p=>p.y+24));
+ return `<svg class="flow" viewBox="0 0 ${W} ${Hh}">${paths}${labels}</svg>`;}
 function flowPO(fin){const po=sum(fin.summary,'amount');const left=fin.summary.map(r=>{const k=r.facility.replace('*','');return {id:k,title:SHORTN[k]||r.name,sub:(k==='chase_ink_1928'?'free float, paid in full '+fin.float_due:k==='shopify_flex'?'2%/mo, pay off when stock sells':k==='DEFER_CASH'?'over the cash cap':'15.49%, minimum only'),right:fmt$(r.available_before)+' room'}});
  const right=[{id:'po',title:'Purchase order · today',sub:D.kpi.po_lines+' lines · '+fmtN(D.kpi.po_units)+' units',right:fmt$(po)}];
  const links=fin.summary.map(r=>({from:r.facility.replace('*',''),to:'po',amount:r.amount,label:fmt$(r.amount),tip:`${SHORTN[r.facility.replace('*','')]||r.facility}: ${fmt$(r.amount)} of the PO, est. cost ${fmt$(r.est_cost)}`,color:r.facility.startsWith('chase')?'#1baf7a':r.facility==='shopify_flex'?'#4a3aa7':'#2a78d6'}));
