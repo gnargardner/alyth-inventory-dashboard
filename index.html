@@ -32,7 +32,7 @@ tr.style{cursor:pointer}tr.style:hover{background:#fafbfb}tr.var td{color:#444;b
 <div id="gate" style="display:none"><div><b>Alyth Inventory</b><p style="color:#6b7177">Enter the dashboard passphrase.</p><input id="pw" type="password" placeholder="passphrase"><button onclick="unlock()">Open</button><p id="err" style="color:#b42318"></p></div></div>
 <header><h1>Alyth inventory <small id="sub"></small></h1><nav><button class="tab active" onclick="mode('inv')">Inventory</button><button class="tab" onclick="mode('debt')">Debt &amp; financing</button><button class="tab" onclick="mode('sav')">Savings</button></nav><small id="gen"></small></header>
 <div class="cards" id="cards"></div><div class="panel" id="panel"></div>
-<script src="data.enc.js?v=1790179490"></script>
+<script src="data.enc.js?v=1790179531"></script>
 <script>
 const $=s=>document.querySelector(s);
 const TIP={
@@ -141,7 +141,7 @@ function scheduleBlock(){const S=D.schedule;if(!S||!S.labels)return '';const mt=
  if(SMONTH===0&&D.fin&&D.fin.summary.length){h+=`<div style="margin:6px 0 10px"><div style="font-size:13px;font-weight:600">${hd('Where the money comes from','pay_with')} <small style="color:var(--mut);font-weight:400">· est. cost ${fmt$(sum(D.fin.summary,'est_cost'))} · sold-out lines today, the rest ${D.fin.buy_date}</small></div>${flowPO(D.fin)}</div>`;}
  if(SMONTH>0){h+=`<p class="d">Financing for this month is decided when it is placed; today's rule of thumb: line by wire if confirmed, otherwise Chase float for the fastest sellers and card 9708 for the rest.</p>`;}
  if(!rows.length){h+='<p class="d">Nothing needs ordering this month on current forecasts.</p>';return h;}
- h+=`<div class="wrap" style="max-height:55vh"><table><tr><th>style</th><th class="tl">color</th><th class="tl">type</th><th>sizes</th><th>units</th><th>cost</th><th class="tl">${hd('debt line','debt_line')}</th><th class="tl">${hd('MOQ note','moq')}</th></tr>`;
+ h+=`<div class="wrap" style="max-height:55vh"><table><tr><th>style</th><th class="tl">color</th><th class="tl">type</th><th>sizes</th><th>units</th><th>cost</th><th class="tl">${hd('debt line','debt_line')}</th><th class="tl">${hd('MOQ','moq')}</th></tr>`;
  for(const g of rows){const sizes=S.lines.filter(l=>l.order_month===SMONTH&&l.product_title===g.product_title&&l.color===g.color&&l.extra===g.extra).sort((a,b)=>a.size.localeCompare(b.size));
   h+=`<tr class="style" onclick="tog(this)"><td>${g.product_title}${g.continuing==='yes'?'':' <span class="tag">not on list</span>'}</td><td class="tl">${g.color}${g.extra?' '+g.extra:''}</td><td class="tl">${g.design_type||''}</td><td>${g.sizes}</td><td>${fmtN(g.qty)}</td><td>${fmt$(g.cost)}</td><td class="tl"><small>${SMONTH===0?payFor(g):'decided when placed'}</small></td><td class="tl"><small style="color:#8a6d00">${g.moq_flag||''}</small></td></tr>`;
   for(const l of sizes){h+=`<tr class="var" style="display:none"><td>${l.size} <small style="color:#999">${l.sku||''}</small></td><td colspan="3" class="tl"><small>${l.reason}${l.lands_month?` · lands ~${monthName(S.labels[Math.min(S.labels.length-1,Math.floor(SMONTH+l.lands_month))]||'')}`:''}</small></td><td>${l.qty}</td><td>${fmt$(l.cost)}</td><td></td><td></td></tr>`;}}
