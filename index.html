@@ -25,7 +25,7 @@ tr.style{cursor:pointer}tr.style:hover{background:#fafbfb}tr.var td{color:#444;b
 <div id="gate" style="display:none"><div><b>Alyth Inventory</b><p style="color:#6b7177">Enter the dashboard passphrase.</p><input id="pw" type="password" placeholder="passphrase"><button onclick="unlock()">Open</button><p id="err" style="color:#b42318"></p></div></div>
 <header><h1>Alyth inventory <small id="sub"></small></h1><nav><button class="tab active" onclick="mode('inv')">Inventory</button><button class="tab" onclick="mode('debt')">Debt &amp; financing</button><button class="tab" onclick="mode('sav')">Savings</button></nav><small id="gen"></small></header>
 <div class="cards" id="cards"></div><div class="panel" id="panel"></div>
-<script src="data.enc.js?v=1790173616"></script>
+<script src="data.enc.js?v=1790173667"></script>
 <script>
 const $=s=>document.querySelector(s);const fmt$=x=>'$'+Math.round(x).toLocaleString();const fmtN=x=>Math.round(x).toLocaleString();
 let D=null,view='overview',sortKey=null,sortDir=-1,q='',MODE='inv';
@@ -75,7 +75,7 @@ function render(){$('#sub').textContent='· data through '+D.asof+', stock '+D.s
  if(MODE==='debt'&&D.fin){return renderDebt();}
  if(MODE==='sav'&&D.sav){return renderSav();}
  $('#cards').innerHTML=CARDS.map(c=>`<div class="card ${c.cls} ${view===c.k?'active':''}" onclick="show('${c.k}')"><div class="l">${c.l}</div><div class="v">${c.v(D)}</div><div class="s">${c.s(D)}</div></div>`).join('');
- let h=actions('inv')+scheduleBlock()+cashBlock();
+ let h=actions('inv')+cashBlock()+scheduleBlock();
  const c=CARDS.find(x=>x.k===view)||CARDS[0];
  h+=`<details class="explore" ${EXPLORE||view!=='overview'?'open':''}><summary>Explore the data · ${c.l}</summary><h2 style="margin-top:8px">${c.l}</h2><p class="d">${c.d}</p>`;
  if(view==='season'){h+=season();}else{h+=table(c);}
