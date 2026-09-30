@@ -33,7 +33,7 @@ tr.style{cursor:pointer}tr.style:hover{background:#fafbfb}tr.var td{color:#444;b
 <div id="gate" style="display:none"><div><b>Alyth Inventory</b><p style="color:#6b7177">Enter the dashboard passphrase.</p><input id="pw" type="password" placeholder="passphrase"><button onclick="unlock()">Open</button><p id="err" style="color:#b42318"></p></div></div>
 <header><h1>Alyth inventory <small id="sub"></small></h1><nav><button class="tab active" onclick="mode('inv')">Inventory</button><button class="tab" onclick="mode('debt')">Debt &amp; financing</button><button class="tab" onclick="mode('sav')">Savings</button></nav><small id="gen"></small></header>
 <div class="cards" id="cards"></div><div class="panel" id="panel"></div>
-<script src="data.enc.js?v=1790279491"></script>
+<script src="data.enc.js?v=1790795691"></script>
 <script>
 const $=s=>document.querySelector(s);
 const TIP={
@@ -46,7 +46,7 @@ const TIP={
  afford:'Two checks before buying: is there room on credit lines to place the PO today, and will checking stay above a one-month safety cushion over the next four months once every bill is paid.',
  month:'Calendar month of the projection. The first month is only the days left in it.',
  sales:'Expected sales in the month: last year\'s same month grown 3% (the same seasonality the inventory forecast uses).',
- cash_in:'Sales that actually reach checking: after card-processing fees and, while a Wayflyer balance is open, after Wayflyer takes its 25% of every day\'s sales.',
+ cash_in:'This is the whole business, not just inventory. In = sales that actually reach checking (after card-processing fees and, while a Wayflyer balance is open, the 25% sweep). Out = rent, payroll, overhead, required loan and card minimums, and the Chase statement paid in full. Inventory purchases are not here because they go on revolving cards and Flex, so they show up as interest cost instead of cash.',
  fixed:'Rent for both stores, payroll (wages, payroll tax, owner guaranteed payments) and everyday overhead (software, supplies, ads...). 2025 P&L averages until real figures replace them.',
  debt_service:'The required monthly payments on debt: the SBA term loan installment, the line\'s minimum (2.5% of principal), and the minimum on each U.S. Bank card. Money that must go out whether or not sales happen.',
  chase_bill:'The Chase Ink statement. It is the one card that is paid IN FULL every month (that is what makes its float free), so its whole statement is a cash outflow, unlike the U.S. Bank cards where only the minimum is paid.',
@@ -195,7 +195,7 @@ function inOut(C){const W=620,rowH=44,padL=54,H=C.rows.length*rowH+30;const max=
   g+=`<rect class="vbar" x="${padL}" y="${y0}" width="${bw*r.inflow/max}" height="12" rx="3" style="fill:#2a78d6"><title>${monthName(r.month)} · money in ${fmt$(r.inflow)} (sales after fees${r.wayflyer_sweep_pct?' and the 25% Wayflyer sweep':''})</title></rect>`;
   g+=`<rect class="vbar" x="${padL}" y="${y0+15}" width="${bw*out/max}" height="12" rx="3" style="fill:#9aa0a6"><title>${monthName(r.month)} · money out ${fmt$(out)} = rent/payroll/overhead ${fmt$(r.fixed_costs)} + loan &amp; card payments ${fmt$(r.debt_service)} + Chase bill ${fmt$(r.chase_payment)}</title></rect>`;
   g+=`<text x="${padL+bw*Math.max(r.inflow,out)/max+8}" y="${y0+18}" font-weight="600" fill="${net<0?'#b42318':'#067647'}">${net<0?'−':'+'}${fmt$(Math.abs(net))}</text>`;});
- return `<div style="font-size:13px;font-weight:600;margin:14px 0 4px">${hd('Money in vs money out','cash_in')} <small style="color:var(--mut);font-weight:400">hover a bar for the breakdown</small></div><div class="legend"><span><i style="background:#2a78d6"></i>in</span><span><i style="background:#9aa0a6"></i>out</span><span>net per month at right</span></div><svg class="viz" viewBox="0 0 ${W} ${H}">${g}</svg>`;}
+ return `<div style="font-size:13px;font-weight:600;margin:14px 0 4px">${hd('Whole-business cash: money in vs money out','cash_in')} <small style="color:var(--mut);font-weight:400">hover a bar for the breakdown</small></div><div class="legend"><span><i style="background:#2a78d6"></i>in: sales after fees and the Wayflyer sweep</span><span><i style="background:#9aa0a6"></i>out: rent, payroll, overhead, loan &amp; card minimums, Chase bill</span><span>net at right · inventory buys sit on cards, so they cost interest, not cash</span></div><svg class="viz" viewBox="0 0 ${W} ${H}">${g}</svg>`;}
 function roomChart(P,D){const fin=D.fin;const used={};if(fin)for(const r of fin.summary){used[r.facility.replace('*','')]=(used[r.facility.replace('*','')]||0)+r.amount;}
  const facs=Object.entries(P.room).sort((a,b)=>b[1]-a[1]);const max=Math.max(...facs.map(x=>x[1]));const W=620,rowH=34,H=facs.length*rowH+40;
  let g=`<div style="font-size:13px;font-weight:600;margin-bottom:2px">${hd('Credit room today, and how much this PO uses','room')}</div><div class="legend"><span><i style="background:var(--s1)"></i>this PO</span><span><i style="background:#dfe3e7"></i>room left</span><span><i style="background:#f3dede"></i>emergency buffer ${fmt$(P.buffer)}</span></div><svg class="viz" viewBox="0 0 ${W} ${H}">`;
