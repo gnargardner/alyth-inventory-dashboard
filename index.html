@@ -31,9 +31,9 @@ tr.style{cursor:pointer}tr.style:hover{background:#fafbfb}tr.var td{color:#444;b
 .season{display:grid;grid-template-columns:120px repeat(12,1fr);gap:2px;font-size:12px}.season div{padding:4px;text-align:center;border-radius:3px}.season .n{text-align:left;color:var(--mut)}
 </style></head><body>
 <div id="gate" style="display:none"><div><b>Alyth Inventory</b><p style="color:#6b7177">Enter the dashboard passphrase.</p><input id="pw" type="password" placeholder="passphrase"><button onclick="unlock()">Open</button><p id="err" style="color:#b42318"></p></div></div>
-<header><h1>Alyth inventory <small id="sub"></small></h1><nav><button class="tab active" onclick="mode('inv')">Inventory</button><button class="tab" onclick="mode('debt')">Debt &amp; financing</button><button class="tab" onclick="mode('sav')">Savings</button></nav><small id="gen"></small></header>
+<header><h1>Alyth inventory <small id="sub"></small></h1><nav><button class="tab active" onclick="mode('inv')">Inventory</button><button class="tab" onclick="mode('debt')">Debt &amp; financing</button><button class="tab" onclick="mode('sav')">Savings</button><button class="tab" onclick="mode('cf')">Cash flow</button></nav><small id="gen"></small></header>
 <div class="cards" id="cards"></div><div class="panel" id="panel"></div>
-<script src="data.enc.js?v=1790795767"></script>
+<script src="data.enc.js?v=1790796455"></script>
 <script>
 const $=s=>document.querySelector(s);
 const TIP={
@@ -68,7 +68,47 @@ const TIP={
  status:'open = worth doing now; blocked = waiting on something (usually the buyout closing); done = banked; not worth = looked at and rejected.'};
 function hd(label,key){return `<span class="hd" data-tip="${(TIP[key]||key).replace(/"/g,'&quot;')}">${label}</span>`;}const fmt$=x=>'$'+Math.round(x).toLocaleString();const fmtN=x=>Math.round(x).toLocaleString();
 let D=null,view='overview',sortKey=null,sortDir=-1,q='',MODE='inv';
-function mode(m){MODE=m;view=m==='debt'?'pay':m==='sav'?'sav':'overview';document.querySelectorAll('nav .tab').forEach((b,i)=>b.classList.toggle('active',['inv','debt','sav'][i]===m));render();}
+function mode(m){MODE=m;view=m==='debt'?'pay':m==='sav'?'sav':m==='cf'?'cf':'overview';document.querySelectorAll('nav .tab').forEach((b,i)=>b.classList.toggle('active',['inv','debt','sav','cf'][i]===m));render();}
+let SCEN='medium';
+Object.assign(TIP,{cf_tab:'A 12-month cash flow statement for the whole company: what comes into checking, what goes out, and what is left, month by month. Three sales cases so a bad season is visible before it happens.',
+ scen:'Low = last year\'s same-month sales less 15%, Medium = last year grown 3%, High = plus 15%. Everything else (rent, payroll, debt payments, Wayflyer sweep) is the same in all three.',
+ receipts:'Sales after card-processing fees, before Wayflyer.', sweep:'Wayflyer takes 25% of every day\'s sales until its balance is gone. Sunk fee, so the only lever is the percentage.',
+ owner:'The owner draw. It is a decision, not a forecast, so the tab shows the largest flat monthly draw each case can support while cash stays above the cushion.',
+ inv_pay:'Inventory is bought on cards. This is the cash that goes out as those card balances are paid down over four months, plus the interest they accrue meanwhile.',
+ closing:'Cash in checking at month end. Red when under the cushion.', net12:'Sum of the twelve monthly nets: cash generated or consumed by the business over the year in this case.',
+ lowpt:'The single worst month-end cash balance in the year, and when it lands. This is the number that decides whether a purchase is safe.',
+ maxpay:'Largest flat monthly owner draw that keeps every month-end above the cushion in this case. The second figure keeps cash merely above zero.'});
+function renderCF(){const C=D.cf12;if(!C){$('#panel').innerHTML='<p>No cash flow data.</p>';return;}const S=C.scenarios[SCEN].summary,rows=C.scenarios[SCEN].rows;const fmtS=x=>(x<0?'−':'')+fmt$(Math.abs(x));
+ $('#cards').innerHTML=`<div class="hero" style="padding:0">`+[
+  {cls:S.net_12m<0?'red':'grn',l:'12-month net cash',v:fmtS(S.net_12m),s:'start '+fmt$(S.start_cash)+' → end '+fmt$(S.end_cash),t:'net12'},
+  {cls:S.low_cash<S.floor?'red':'grn',l:'Lowest point',v:fmt$(S.low_cash),s:monthName(S.low_month)+' · cushion '+fmt$(S.floor)+' · '+S.months_below+' months under',t:'lowpt'},
+  {cls:'amb',l:'Wayflyer sweep',v:fmt$(S.total_sweep),s:'taken from sales this year · clears '+(S.wayflyer_clear.length===7?monthName(S.wayflyer_clear):S.wayflyer_clear),t:'sweep'},
+  {cls:'blu',l:'Max owner pay',v:fmt$(S.max_owner_pay_floor)+'/mo',s:'keeping the cushion · '+fmt$(S.max_owner_pay_zero)+'/mo keeping cash above zero'+(S.owner_pay_set?'':' · currently modeled at $0'),t:'maxpay'},
+  {cls:'',l:'Inventory on credit',v:fmt$(S.inventory_on_credit),s:'bought this year · '+fmt$(S.interest_on_inventory)+' interest',t:'inv_pay'}
+ ].map(c=>`<div class="card ${c.cls}" style="cursor:default"><div class="l">${hd(c.l,c.t)}</div><div class="v">${c.v}</div><div class="s">${c.s}</div></div>`).join('')+'</div>';
+ let h=`<h2>${hd('Company cash flow, next 12 months','cf_tab')}</h2><div class="sortbar">${hd('Sales case','scen')} `+['low','medium','high'].map(k=>`<button class="${SCEN===k?'on':''}" onclick="SCEN='${k}';render()">${k} ${k==='low'?'−15%':k==='high'?'+15%':'last year +3%'}</button>`).join('')+`</div>`;
+ h+=cfChart(C)+`<h2 style="margin-top:16px">Recommendations</h2><div class="acts">`+C.recommendations.map(r=>`<div class="act" onclick="this.classList.toggle('show')"><div class="p p${r.p}">${r.p}</div><div><div class="t">${r.title}</div><div class="d" style="display:block">${r.detail}</div></div><div></div></div>`).join('')+'</div>';
+ // statement: lines as rows, months as columns
+ const L=[['Sales',r=>r.gross_sales,'sales'],['Received after fees',r=>r.receipts,'receipts'],['Wayflyer sweep',r=>-r.wayflyer_sweep,'sweep'],['Cash in',r=>r.cash_in,'cash_in',true],
+  ['Rent',r=>-r.rent,'fixed'],['Payroll',r=>-r.payroll,'fixed'],['Owner pay',r=>-r.owner_pay,'owner'],['Other overhead',r=>-r.other_opex,'fixed'],['Loan & card minimums',r=>-r.debt_service,'debt_service'],['Chase bill',r=>-r.chase_bill,'chase_bill'],['Inventory paydown + interest',r=>-(r.inventory_paydown+r.inventory_interest),'inv_pay'],['Cash out',r=>-r.cash_out,'fixed',true],
+  ['Net for the month',r=>r.net,'net12',true],['Closing cash',r=>r.closing_cash,'closing',true],['memo: inventory bought on credit',r=>r.inventory_bought_on_credit,'inv_pay'],['memo: Wayflyer left',r=>r.wayflyer_remaining,'sweep']];
+ h+=`<h2 style="margin-top:16px">Statement · ${SCEN} case</h2><div class="wrap"><table style="font-size:12.5px"><tr><th class="tl">line</th>${rows.map(r=>`<th>${monthName(r.month).split(' ')[0].slice(0,3)}<br><small>${r.month.slice(2,4)}</small></th>`).join('')}<th>12 mo</th></tr>`;
+ for(const [name,f,tip,bold] of L){const vals=rows.map(f);const tot=name.startsWith('Closing')?vals[vals.length-1]:vals.reduce((a,b)=>a+b,0);
+  h+=`<tr style="${bold?'font-weight:600;background:#fafbfb':''}${name.startsWith('memo')?'color:#888;font-style:italic':''}"><td class="tl">${hd(name,tip)}</td>${vals.map((v,i)=>`<td style="${name.startsWith('Closing')&&rows[i].below_floor?'color:var(--red)':''}">${v<0?'−':''}${fmt$(Math.abs(v)).replace('$','')}</td>`).join('')}<td>${tot<0?'−':''}${fmt$(Math.abs(tot)).replace('$','')}</td></tr>`;}
+ h+='</table></div>';
+ const a=C.assumptions;h+=`<p class="d" style="display:block;margin-top:10px">Assumptions: sales = last year's same month × ${C.growth} × case; rent ${fmt$(a.rent)}, payroll ${fmt$(a.payroll)}, other overhead ${fmt$(a.other_opex)} per month from the 2025 P&amp;L; owner pay ${a.owner_pay_monthly?fmt$(a.owner_pay_monthly):'not set ($0)'}; inventory from the buy schedule, financed on cards at ${(a.card_inventory_apr*100).toFixed(2)}% and paid down over ${a.card_inventory_paydown_months} months; Wayflyer 25% of sales until cleared. Checking balance from the last bank read.</p>`;
+ $('#panel').innerHTML=h;}
+function cfChart(C){const W=760,H=260,padL=56,padR=16,padT=28,padB=34;const cases=['low','medium','high'];const col={low:'#e34948',medium:'#1a1a1a',high:'#1baf7a'};const n=C.labels.length;const xs=i=>padL+(W-padL-padR)*(i+0.5)/n;
+ const all=cases.flatMap(k=>C.scenarios[k].rows.map(r=>r.closing_cash));const floor=C.scenarios[SCEN].summary.floor;const maxV=Math.max(floor*1.1,...all)*1.06,minV=Math.min(0,...all)*1.1;const y=v=>padT+(H-padT-padB)*(1-(v-minV)/(maxV-minV));
+ let g='';for(let i=0;i<=4;i++){const v=minV+(maxV-minV)*i/4;g+=`<line class="grid" x1="${padL}" x2="${W-padR}" y1="${y(v)}" y2="${y(v)}"/><text x="${padL-8}" y="${y(v)+4}" text-anchor="end" fill="#6b7177">${v<0?'−':''}$${Math.abs(Math.round(v/1000))}k</text>`;}
+ g+=`<rect x="${padL}" y="${y(floor)}" width="${W-padL-padR}" height="${Math.max(0,y(minV)-y(floor))}" fill="#fde8e6" opacity=".45"/><line x1="${padL}" x2="${W-padR}" y1="${y(floor)}" y2="${y(floor)}" stroke="#b42318" stroke-width="1.5" stroke-dasharray="6 4"/><text x="${W-padR}" y="${y(floor)-6}" text-anchor="end" fill="#b42318" font-weight="600">cushion ${fmt$(floor)}</text>`;
+ if(minV<0)g+=`<line x1="${padL}" x2="${W-padR}" y1="${y(0)}" y2="${y(0)}" stroke="#333" stroke-width="1"/>`;
+ for(const k of cases){const rows=C.scenarios[k].rows;const pts=rows.map((r,i)=>`${xs(i)},${y(r.closing_cash)}`).join(' ');const on=k===SCEN;
+  g+=`<polyline points="${pts}" fill="none" stroke="${col[k]}" stroke-width="${on?3:1.5}" opacity="${on?1:.45}" ${on?'':'stroke-dasharray="4 3"'}/>`;
+  if(on)rows.forEach((r,i)=>{g+=`<circle cx="${xs(i)}" cy="${y(r.closing_cash)}" r="4.5" fill="${r.below_floor?'#b42318':'#067647'}" stroke="#fff" stroke-width="1.5"><title>${monthName(r.month)} · closing cash ${fmt$(r.closing_cash)} · in ${fmt$(r.cash_in)} · out ${fmt$(r.cash_out)}</title></circle>`;});
+  const last=rows[rows.length-1];g+=`<text x="${xs(n-1)+10}" y="${y(last.closing_cash)+4}" fill="${col[k]}" font-weight="600">${k}</text>`;}
+ C.labels.forEach((l,i)=>g+=`<text x="${xs(i)}" y="${H-padB+18}" text-anchor="middle">${monthName(l).split(' ')[0].slice(0,3)}</text>`);
+ return `<div style="font-size:13px;font-weight:600;margin:6px 0 2px">${hd('Cash in checking, all three cases','closing')}</div><div class="legend"><span><i class="ln" style="border-color:#e34948"></i>low</span><span><i class="ln"></i>medium</span><span><i class="ln" style="border-color:#1baf7a"></i>high</span><span><i style="background:#fde8e6;border:1px dashed #b42318"></i>below cushion</span></div><svg class="viz" style="max-width:800px" viewBox="0 0 ${W} ${H}">${g}</svg>`;}
 let SSORT='money';
 function renderSav(){const S=D.sav;const t=S.totals;
  $('#cards').innerHTML=[
@@ -115,6 +155,7 @@ function render(){$('#sub').textContent='· data through '+D.asof+', stock '+D.s
  document.body.classList.toggle('compact',MODE==='inv');
  if(MODE==='debt'&&D.fin){return renderDebt();}
  if(MODE==='sav'&&D.sav){return renderSav();}
+ if(MODE==='cf'){return renderCF();}
  // glanceable: the four numbers that matter first, then the detail cards behind a toggle
  const k=D.kpi, po=D.fin?sum(D.fin.summary,'amount'):k.po_cost, cashOk=!D.cash_tight;
  const HERO=[
