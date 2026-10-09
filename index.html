@@ -33,7 +33,7 @@ tr.style{cursor:pointer}tr.style:hover{background:#fafbfb}tr.var td{color:#444;b
 <div id="gate" style="display:none"><div><b>Alyth Inventory</b><p style="color:#6b7177">Enter the dashboard passphrase.</p><input id="pw" type="password" placeholder="passphrase"><button onclick="unlock()">Open</button><p id="err" style="color:#b42318"></p></div></div>
 <header><h1>Alyth inventory <small id="sub"></small></h1><nav><button class="tab active" onclick="mode('inv')">Inventory</button><button class="tab" onclick="mode('debt')">Debt &amp; financing</button><button class="tab" onclick="mode('sav')">Savings</button><button class="tab" onclick="mode('cf')">Cash flow</button><button class="tab" onclick="mode('ch')">Profit &amp; cash</button></nav><small id="gen"></small></header>
 <div class="cards" id="cards"></div><div class="panel" id="panel"></div>
-<script src="data.enc.js?v=1791578284"></script>
+<script src="data.enc.js?v=1791578885"></script>
 <script>
 const $=s=>document.querySelector(s);
 const TIP={
@@ -66,6 +66,59 @@ const TIP={
  annual:'Dollars saved per year if the item is done, recomputed from live balances, purchase levels and inventory on every run.',
  effort:'How hard it is: one dot is minutes, five dots is a project.',
  status:'open = worth doing now; blocked = waiting on something (usually the buyout closing); done = banked; not worth = looked at and rejected.'};
+
+// ===== Visual helpers =====
+const PAL={goods:'#6b7280',freight:'#9aa0a6',card_fee:'#b8bdc3',processing:'#c9ccd0',delivery_software:'#d6d9dc',oh:'#eb6834',rent:'#eda100',wages:'#2a78d6',taxes:'#8e6dd6',owner:'#e87ba4',interest:'#e34948',principal:'#4a3aa7',cash:'#067647',profit:'#1baf7a',short:'#b42318',sweep:'#e34948'};
+function river(title, src, items, opts={}){
+ // src={label,val}; items=[{key,label,val,color}] ; leftover flows to opts.leftover={label,val,color}; optional second stage opts.stage2=[{label,val,color}] fed by leftover
+ const W=opts.W||980,H=opts.H||Math.max(360,items.length*34+120),nodeW=14,gap=6,padT=26,padB=14;
+ const total=Math.max(1,src.val);const posItems=items.filter(i=>i.val>0);const lo=opts.leftover;const sumOut=posItems.reduce((a,i)=>a+i.val,0)+Math.max(0,lo?lo.val:0);
+ const scale=(H-padT-padB-gap*(posItems.length+1))/Math.max(sumOut,total);
+ const xS=150,xT=W-370,xT2=W-150;
+ let g='';
+ // source node (net sales) + possible shortfall feeding it when costs exceed sales
+ const srcH=total*scale;const shortV=lo&&lo.val<0?-lo.val:0;const srcY=padT+((H-padT-padB)-srcH-shortV*scale)/2;
+ g+=`<rect x="${xS}" y="${srcY}" width="${nodeW}" height="${srcH}" rx="3" fill="#1a1a1a"/><text x="${xS-10}" y="${srcY+srcH/2-2}" text-anchor="end" font-weight="700" font-size="14">${src.label}</text><text x="${xS-10}" y="${srcY+srcH/2+14}" text-anchor="end" fill="#555">${fmt$(src.val)}</text>`;
+ let yS=srcY;
+ if(shortV>0){const sh=shortV*scale;const y0=srcY+srcH;g+=`<rect x="${xS}" y="${y0}" width="${nodeW}" height="${sh}" rx="3" fill="${PAL.short}"/><text x="${xS-10}" y="${y0+sh/2+4}" text-anchor="end" font-weight="700" fill="${PAL.short}">${lo.label}</text><text x="${xS-10}" y="${y0+sh/2+18}" text-anchor="end" fill="${PAL.short}">${fmt$(shortV)}</text>`;}
+ // targets stacked
+ const tgt=[...posItems];if(lo&&lo.val>0)tgt.push({key:'left',label:lo.label,val:lo.val,color:lo.color,isLeft:true});
+ let yT=padT;const bands=[];const tiny=[];
+ for(const t of tgt){const h=t.val*scale;
+  g+=`<rect x="${xT}" y="${yT}" width="${nodeW}" height="${Math.max(2,h)}" rx="3" fill="${t.color}"/>`;
+  const pct=Math.round(t.val/total*100);
+  if(h>=13||t.isLeft)g+=`<text x="${xT+nodeW+10}" y="${yT+h/2+4}" font-weight="${t.isLeft?700:600}" fill="${t.isLeft?t.color:'#1a1a1a'}">${t.label} <tspan fill="#555" font-weight="400">${fmt$(t.val)} · ${pct}¢ of each $</tspan></text>`;else tiny.push(`${t.label} ${fmt$(t.val)}`);
+  // band from source
+  const y0=yS,y1=yS+h;const mx=(xS+nodeW+xT)/2;
+  g+=`<path d="M${xS+nodeW},${y0} C${mx},${y0} ${mx},${yT} ${xT},${yT} L${xT},${yT+h} C${mx},${yT+h} ${mx},${y1} ${xS+nodeW},${y1} Z" fill="${t.color}" opacity="${t.isLeft?0.55:0.35}"><title>${t.label}: ${fmt$(t.val)} (${pct}% of ${src.label.toLowerCase()})</title></path>`;
+  bands.push({t,y:yT,h});yS=y1;yT+=h+gap;}
+ // stage 2: leftover splits again (e.g. true profit -> principal + cash)
+ if(opts.stage2&&lo&&lo.val>0){const L=bands.find(b=>b.t.isLeft);if(L){let y2=L.y;const sum2=opts.stage2.reduce((a,i)=>a+Math.max(0,i.val),0)||1;const sc2=L.h/sum2;const xA=xT+nodeW,xB=xT2;const mx=(xA+xB)/2;let yB=L.y;
+  for(const t of opts.stage2){if(t.val<=0)continue;const h=t.val*sc2;g+=`<rect x="${xB}" y="${yB}" width="${nodeW}" height="${Math.max(2,h)}" rx="3" fill="${t.color}"/><text x="${xB+nodeW+8}" y="${yB+h/2+4}" font-weight="700" fill="${t.color}">${t.label}</text><text x="${xB+nodeW+8}" y="${yB+h/2+18}" fill="#555">${fmt$(t.val)}</text>`;
+   g+=`<path d="M${xA},${y2} C${mx},${y2} ${mx},${yB} ${xB},${yB} L${xB},${yB+h} C${mx},${yB+h} ${mx},${y2+h} ${xA},${y2+h} Z" fill="${t.color}" opacity=".45"><title>${t.label}: ${fmt$(t.val)}</title></path>`;y2+=h;yB+=h+gap;}}}
+ if(tiny.length)g+=`<text x="${xT+nodeW+10}" y="${H-4}" fill="#6b7177" font-size="11.5">too small to label: ${tiny.join(' · ')}</text>`;
+ return `<div style="font-size:13px;font-weight:600;margin:14px 0 2px">${title}</div><svg class="viz" style="max-width:1040px" viewBox="0 0 ${W} ${H}">${g}</svg>`;}
+function waterfall(title, steps, opts={}){
+ // steps=[{label,val,type:'start'|'down'|'sub'|'total'|'end',color}] ; running total drawn as floating bars
+ const W=opts.W||980,H=260,padL=60,padR=14,padT=24,padB=56;let run=0;const bars=[];let maxV=0,minV=0;
+ for(const s of steps){if(s.type==='start'||s.type==='total'||s.type==='end'){run=s.type==='start'?s.val:(s.type==='end'?s.val:run);bars.push({...s,y0:0,y1:run});}else{const y0=run;run=run-s.val;bars.push({...s,y0:run,y1:y0});}maxV=Math.max(maxV,bars[bars.length-1].y0,bars[bars.length-1].y1);minV=Math.min(minV,bars[bars.length-1].y0,bars[bars.length-1].y1);}
+ maxV*=1.08;const y=v=>padT+(H-padT-padB)*(1-(v-minV)/(maxV-minV||1));const n=bars.length;const gw=(W-padL-padR)/n;const bw=gw*0.62;
+ let g='';for(let i=0;i<=4;i++){const v=minV+(maxV-minV)*i/4;g+=`<line class="grid" x1="${padL}" x2="${W-padR}" y1="${y(v)}" y2="${y(v)}"/><text x="${padL-8}" y="${y(v)+4}" text-anchor="end" fill="#6b7177">${v<0?'−':''}$${Math.abs(Math.round(v/1000))}k</text>`;}
+ g+=`<line x1="${padL}" x2="${W-padR}" y1="${y(0)}" y2="${y(0)}" stroke="#333"/>`;
+ bars.forEach((b,i)=>{const x=padL+gw*i+(gw-bw)/2;const top=y(Math.max(b.y0,b.y1)),bot=y(Math.min(b.y0,b.y1));const isTot=b.type==='start'||b.type==='total'||b.type==='end';const col=b.color||(isTot?(b.y1<0?PAL.short:'#1a1a1a'):'#9aa0a6');
+  g+=`<rect class="vbar" x="${x}" y="${top}" width="${bw}" height="${Math.max(2,bot-top)}" rx="3" style="fill:${col}"><title>${b.label}: ${fmt$(Math.abs(b.val))}</title></rect>`;
+  if(i<n-1){const nx=padL+gw*(i+1)+(gw-bw)/2;g+=`<line x1="${x+bw}" x2="${nx}" y1="${y(b.type==='down'||b.type==='sub'?b.y0:b.y1)}" y2="${y(b.type==='down'||b.type==='sub'?b.y0:b.y1)}" stroke="#bbb" stroke-dasharray="3 3"/>`;}
+  g+=`<text x="${x+bw/2}" y="${top-6}" text-anchor="middle" font-weight="600" font-size="11.5" fill="${isTot&&b.y1<0?PAL.short:'#1a1a1a'}">${isTot?(b.y1<0?'−':'')+fmt$(Math.abs(b.y1)):'−'+fmt$(b.val)}</text>`;
+  const words=b.label.split(' ');const l1=words.slice(0,2).join(' '),l2=words.slice(2).join(' ');g+=`<text x="${x+bw/2}" y="${H-padB+16}" text-anchor="middle" font-size="11.5">${l1}</text>${l2?`<text x="${x+bw/2}" y="${H-padB+30}" text-anchor="middle" font-size="11.5">${l2}</text>`:''}`;});
+ return `<div style="font-size:13px;font-weight:600;margin:14px 0 2px">${title}</div><svg class="viz" style="max-width:1040px" viewBox="0 0 ${W} ${H}">${g}</svg>`;}
+function per100(title, rowsByChannel, items){
+ // rowsByChannel: [{label,color,net,parts:{key:val}}] -> horizontal 100% bars
+ let h=`<div style="font-size:13px;font-weight:600;margin:14px 0 6px">${title}</div><div class="legend">${items.map(i=>`<span><i style="background:${i.color}"></i>${i.label}</span>`).join('')}<span><i style="background:${PAL.cash}"></i>left as cash</span><span><i style="background:${PAL.short}"></i>shortfall</span></div>`;
+ for(const r of rowsByChannel){const net=Math.max(1,r.net);let segs='';let used=0;for(const i of items){const v=Math.max(0,r.parts[i.key]||0)/net*100;if(v<0.5)continue;segs+=`<div title="${i.label}: $${(r.parts[i.key]/net*100).toFixed(1)} of every $100 (${fmt$(r.parts[i.key])})" style="width:${v}%;background:${i.color};display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;overflow:hidden;white-space:nowrap">${v>=6?'$'+Math.round(v):''}</div>`;used+=v;}
+  const left=100-used;segs+=left>=0?`<div title="left as cash: $${left.toFixed(1)} of every $100" style="width:${left}%;background:${PAL.cash};display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700">${left>=4?'$'+Math.round(left):''}</div>`:'';
+  h+=`<div style="display:grid;grid-template-columns:190px 1fr 120px;gap:12px;align-items:center;margin:6px 0"><div style="font-weight:600"><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${r.color};margin-right:6px"></i>${r.label}<br><small style="color:var(--mut);font-weight:400">${fmt$(r.net)} net sales</small></div><div style="display:flex;height:30px;border-radius:7px;overflow:hidden;background:#eee">${segs}${left<0?`<div style="position:relative"></div>`:''}</div><div style="font-weight:700;color:${left<0?PAL.short:PAL.cash}">${left<0?'−$'+Math.abs(left).toFixed(0)+' short':'$'+left.toFixed(0)+' left'}<br><small style="color:var(--mut);font-weight:400">of every $100</small></div></div>`;}
+ return h;}
+
 function hd(label,key){return `<span class="hd" data-tip="${(TIP[key]||key).replace(/"/g,'&quot;')}">${label}</span>`;}const fmt$=x=>'$'+Math.round(x).toLocaleString();const fmtN=x=>Math.round(x).toLocaleString();
 let D=null,view='overview',sortKey=null,sortDir=-1,q='',MODE='inv';
 function mode(m){MODE=m;view=m==='debt'?'pay':m==='sav'?'sav':m==='cf'?'cf':m==='ch'?'ch':'overview';document.querySelectorAll('nav .tab').forEach((b,i)=>b.classList.toggle('active',['inv','debt','sav','cf','ch'][i]===m));render();}
@@ -101,10 +154,26 @@ function renderCH(){const P=D.pnl;if(!P){$('#panel').innerHTML='<p>No profit &am
   {l:'Cost of goods, all-in',v:fmt$(S('cogs_total')),s:Math.round(S('cogs_total')/Math.max(net,1)*100)+'% of net · freight '+fmt$(S('freight'))+' · card fee '+fmt$(S('card_fee')),t:'pc_cogs'}
  ].map(c=>`<div class="card ${c.cls||''}" style="cursor:default"><div class="l">${hd(c.l,c.t)}</div><div class="v">${c.v}</div><div class="s">${c.s}</div></div>`).join('')+'</div>';
  let h=`<h2>${hd('Profit & cash by channel','pc_tab')}</h2><div class="sortbar"><span>Channel</span> `+[['all','Company'],['online',CH.online.label],['golden',CH.golden.label],['fortcollins',CH.fortcollins.label]].map(([k,l])=>`<button class="${PCH===k?'on':''}" onclick="PCH='${k}';render()">${l}</button>`).join('')+` <span style="margin-left:14px">Period</span> `+[['month','monthly'],['quarter','quarterly'],['year','yearly']].map(([k,l])=>`<button class="${PPER===k?'on':''}" onclick="PPER='${k}';render()">${l}</button>`).join('')+`</div>`;
+ h+=pcPictures(P);
  h+=`<h2 style="margin-top:12px">${hd('Levers, ranked by dollars per year','pc_lev')}</h2><div class="acts">`+P.levers.map(l=>`<div class="act" onclick="this.classList.toggle('show')"><div class="p ${l.rank<=2?'p1':l.rank<=4?'p2':'p3'}">${l.rank}</div><div><div class="t">${l.title} <span style="color:var(--grn)">~${fmt$(l.impact)}/yr</span> <small style="color:var(--mut)">${l.kind}</small></div><div class="d">${l.detail}</div></div><div></div></div>`).join('')+'</div>';
- h+=pcChart(rows)+pcTable(rows,P);
+ h+=pcChart(rows)+pcTable(rows,P)+'</details>';
  const A=P.assumptions;h+=`<p class="d" style="display:block;margin-top:10px"><b>Estimates in this statement:</b> inbound freight ${Math.round(A.freight_pct*100)}% of goods (invoices will replace it); employee benefits ${Math.round(A.benefits_pct*100)}% (Gusto); owner comp ${A.owner_pay_set?'planned draw':'historical guaranteed payments, planned draw not set'}; 2026 costs = 2025 P&amp;L + 3% until the Xero/Gusto feeds; debt interest and principal estimated from live balances, Wayflyer at 25% of sales; store cost splits to confirm: ${A.flags.join(', ')}. Breckenridge excluded. Shaded columns are projected.</p>`;
  $('#panel').innerHTML=h;}
+let PCWIN='l12';
+function pcAgg(P,ch,win){const M=P.rollup.month.filter(r=>r.channel===ch);const hist=M.filter(r=>!r.projected);const fut=M.filter(r=>r.projected);const pick=win==='l12'?hist.slice(-12):win==='l3'?hist.slice(-3):win==='l1'?hist.slice(-1):fut.slice(0,12);const keys=['orders','units','gross','net','goods','freight','card_fee','processing','delivery_software','cogs_total','oh','rent','wages','taxes','owner','interest','principal','wayflyer','true_profit','cash'];const o={};for(const k of keys)o[k]=pick.reduce((a,r)=>a+(+r[k]||0),0);o.n=pick.length;o.label=pick.length?(pick.length===1?monthName(pick[0].period):monthName(pick[0].period)+' – '+monthName(pick[pick.length-1].period)):'';return o;}
+function pcPictures(P){const CH=P.channels;const A=pcAgg(P,PCH,PCWIN);const who=PCH==='all'?'Company':CH[PCH].label;
+ let h=`<div class="sortbar" style="margin-top:8px"><span>Picture of</span> `+[['l12','last 12 months'],['l3','last quarter'],['l1','last month'],['n12','next 12 months (projected)']].map(([k,l])=>`<button class="${PCWIN===k?'on':''}" onclick="PCWIN='${k}';render()">${l}</button>`).join('')+`<span style="margin-left:auto;color:var(--mut)">${A.label}</span></div>`;
+ const items=[{key:'goods',label:'Goods',val:A.goods,color:PAL.goods},{key:'freight',label:'Inbound freight',val:A.freight,color:PAL.freight},{key:'card_fee',label:'Card surcharge',val:A.card_fee,color:PAL.card_fee},{key:'processing',label:'Shopify fees',val:A.processing,color:PAL.processing},{key:'delivery_software',label:'Shipping & software',val:A.delivery_software,color:PAL.delivery_software},{key:'oh',label:'Overhead',val:A.oh,color:PAL.oh},{key:'rent',label:'Rent',val:A.rent,color:PAL.rent},{key:'wages',label:'Employee wages',val:A.wages,color:PAL.wages},{key:'taxes',label:'Taxes & licenses',val:A.taxes,color:PAL.taxes},{key:'owner',label:'Owner comp',val:A.owner,color:PAL.owner},{key:'interest',label:'Interest & fees',val:A.interest,color:PAL.interest}];
+ const tp=A.true_profit;const lo=tp>=0?{label:'True profit',val:tp,color:PAL.profit}:{label:'Shortfall (borrowed)',val:tp,color:PAL.short};
+ const stage2=tp>0?[{label:A.cash<0?`Debt principal repaid (${fmt$(A.principal)} total; ${fmt$(-A.cash)} of it borrowed)`:'Debt principal repaid',val:Math.min(tp,A.principal),color:PAL.principal},{label:'Cash kept',val:Math.max(0,A.cash),color:PAL.cash}]:null;
+ h+=river(`${who}: where every sales dollar went${tp>0&&A.cash<0?` <small style="color:${PAL.short};font-weight:400">· debt principal (${fmt$(A.principal)}) exceeded true profit, so ${fmt$(-A.cash)} had to be borrowed</small>`:''}`,{label:'Net sales',val:A.net},items,{leftover:lo,stage2});
+ if(tp>0&&A.cash<0){h+=`<div class="verdict bad" style="margin-top:6px">After ${fmt$(tp)} of true profit, ${fmt$(A.principal)} of debt principal came due (Wayflyer ${fmt$(A.wayflyer)}). Cash after all debt payments: −${fmt$(-A.cash)}. That gap is what new borrowing covered.</div>`;}
+ const steps=[{label:'Net sales',val:A.net,type:'start'},{label:'Cost of goods',val:A.cogs_total,type:'down',color:PAL.goods},{label:'Overhead',val:A.oh,type:'down',color:PAL.oh},{label:'Rent',val:A.rent,type:'down',color:PAL.rent},{label:'Employee wages',val:A.wages,type:'down',color:PAL.wages},{label:'Taxes & owner',val:A.taxes+A.owner,type:'down',color:PAL.owner},{label:'Interest & fees',val:A.interest,type:'down',color:PAL.interest},{label:'True profit',val:0,type:'total',color:tp>=0?PAL.profit:PAL.short},{label:'Debt principal',val:A.principal,type:'down',color:PAL.principal},{label:'Cash after debt',val:0,type:'total',color:A.cash>=0?PAL.cash:PAL.short}];
+ h+=waterfall(`${who}: from sales down to cash, step by step`,steps);
+ // per $100 across channels (same window)
+ const rows=['online','golden','fortcollins'].map(ch=>{const a=pcAgg(P,ch,PCWIN);return {label:CH[ch].label,color:CH[ch].color,net:a.net,parts:{cogs_total:a.cogs_total,oh:a.oh,rent:a.rent,wages:a.wages,owner_tax:a.owner+a.taxes,interest:a.interest,principal:a.principal}}});
+ h+=per100('Each channel, per $100 of sales: who gets what',rows,[{key:'cogs_total',label:'cost of goods',color:PAL.goods},{key:'oh',label:'overhead',color:PAL.oh},{key:'rent',label:'rent',color:PAL.rent},{key:'wages',label:'wages',color:PAL.wages},{key:'owner_tax',label:'owner & taxes',color:PAL.owner},{key:'interest',label:'interest',color:PAL.interest},{key:'principal',label:'debt principal',color:PAL.principal}]);
+ h+=`<details style="margin-top:10px"><summary style="cursor:pointer;color:var(--mut);font-size:12.5px">the full statement table</summary>`;return h;}
 function pcChart(rows){if(!rows.length)return '';const W=900,H=240,padL=60,padR=14,padT=20,padB=40;const n=rows.length;const gw=(W-padL-padR)/n;const vals=rows.flatMap(r=>[r.true_profit,r.cash]);const maxV=Math.max(1,...vals)*1.1,minV=Math.min(0,...vals)*1.1;const y=v=>padT+(H-padT-padB)*(1-(v-minV)/(maxV-minV));
  let g='';for(let i=0;i<=4;i++){const v=minV+(maxV-minV)*i/4;g+=`<line class="grid" x1="${padL}" x2="${W-padR}" y1="${y(v)}" y2="${y(v)}"/><text x="${padL-8}" y="${y(v)+4}" text-anchor="end" fill="#6b7177">${v<0?'−':''}$${Math.abs(Math.round(v/1000))}k</text>`;}
  g+=`<line x1="${padL}" x2="${W-padR}" y1="${y(0)}" y2="${y(0)}" stroke="#333"/>`;const bw=gw*0.32;
@@ -165,7 +234,7 @@ function renderCF(){const C=D.cf12;if(!C){$('#panel').innerHTML='<p>No cash flow
   {cls:'',l:'Inventory on credit',v:fmt$(S.inventory_on_credit),s:'bought this year · '+fmt$(S.interest_on_inventory)+' interest',t:'inv_pay'}
  ].map(c=>`<div class="card ${c.cls}" style="cursor:default"><div class="l">${hd(c.l,c.t)}</div><div class="v">${c.v}</div><div class="s">${c.s}</div></div>`).join('')+'</div>';
  let h=`<h2>${hd('Company cash flow, next 12 months','cf_tab')}</h2><div class="sortbar">${hd('Sales case','scen')} `+['low','medium','high'].map(k=>`<button class="${SCEN===k?'on':''}" onclick="SCEN='${k}';render()">${k} ${k==='low'?'−15%':k==='high'?'+15%':'last year +3%'}</button>`).join('')+`</div>`;
- h+=cfChart(C)+`<h2 style="margin-top:16px">Recommendations</h2><div class="acts">`+C.recommendations.map(r=>`<div class="act" onclick="this.classList.toggle('show')"><div class="p p${r.p}">${r.p}</div><div><div class="t">${r.title}</div><div class="d" style="display:block">${r.detail}</div></div><div></div></div>`).join('')+'</div>';
+ h+=cfRiver(C)+cfChart(C)+`<h2 style="margin-top:16px">Recommendations</h2><div class="acts">`+C.recommendations.map(r=>`<div class="act" onclick="this.classList.toggle('show')"><div class="p p${r.p}">${r.p}</div><div><div class="t">${r.title}</div><div class="d" style="display:block">${r.detail}</div></div><div></div></div>`).join('')+'</div>';
  // statement: lines as rows, months as columns
  const L=[['Sales',r=>r.gross_sales,'sales'],['Received after fees',r=>r.receipts,'receipts'],['Wayflyer sweep',r=>-r.wayflyer_sweep,'sweep'],['Cash in',r=>r.cash_in,'cash_in',true],
   ['Rent',r=>-r.rent,'fixed'],['Payroll',r=>-r.payroll,'fixed'],['Owner pay',r=>-r.owner_pay,'owner'],['Other overhead',r=>-r.other_opex,'fixed'],['Loan & card minimums',r=>-r.debt_service,'debt_service'],['Chase bill',r=>-r.chase_bill,'chase_bill'],['Inventory paydown + interest',r=>-(r.inventory_paydown+r.inventory_interest),'inv_pay'],['Cash out',r=>-r.cash_out,'fixed',true],
@@ -176,6 +245,9 @@ function renderCF(){const C=D.cf12;if(!C){$('#panel').innerHTML='<p>No cash flow
  h+='</table></div>';
  const a=C.assumptions;h+=`<p class="d" style="display:block;margin-top:10px">Assumptions: sales = last year's same month × ${C.growth} × case; rent ${fmt$(a.rent)}, payroll ${fmt$(a.payroll)}, other overhead ${fmt$(a.other_opex)} per month from the 2025 P&amp;L; owner pay ${a.owner_pay_monthly?fmt$(a.owner_pay_monthly):'not set ($0)'}; inventory from the buy schedule, financed on cards at ${(a.card_inventory_apr*100).toFixed(2)}% and paid down over ${a.card_inventory_paydown_months} months; Wayflyer 25% of sales until cleared. Checking balance from the last bank read.</p>`;
  $('#panel').innerHTML=h;}
+function cfRiver(C){const rows=C.scenarios[SCEN].rows;const S=k=>rows.reduce((a,r)=>a+(+r[k]||0),0);const sales=S('gross_sales');const items=[{key:'fees',label:'Card processing',val:sales-S('receipts'),color:PAL.processing},{key:'sweep',label:'Wayflyer sweep',val:S('wayflyer_sweep'),color:PAL.sweep},{key:'rent',label:'Rent',val:S('rent'),color:PAL.rent},{key:'payroll',label:'Payroll',val:S('payroll'),color:PAL.wages},{key:'owner',label:'Owner pay',val:S('owner_pay'),color:PAL.owner},{key:'oh',label:'Other overhead',val:S('other_opex'),color:PAL.oh},{key:'ds',label:'Loan & card minimums',val:S('debt_service'),color:PAL.principal},{key:'chase',label:'Chase bill',val:S('chase_bill'),color:'#8e6dd6'},{key:'inv',label:'Inventory paydown + interest',val:S('inventory_paydown')+S('inventory_interest'),color:PAL.goods}];
+ const net=S('net');const lo=net>=0?{label:'Cash added to checking',val:net,color:PAL.cash}:{label:'Cash drawn from checking / borrowed',val:net,color:PAL.short};
+ return river(`Next 12 months, ${SCEN} case: where the sales dollars go`,{label:'Sales',val:sales},items,{leftover:lo});}
 function cfChart(C){const W=760,H=260,padL=56,padR=16,padT=28,padB=34;const cases=['low','medium','high'];const col={low:'#e34948',medium:'#1a1a1a',high:'#1baf7a'};const n=C.labels.length;const xs=i=>padL+(W-padL-padR)*(i+0.5)/n;
  const all=cases.flatMap(k=>C.scenarios[k].rows.map(r=>r.closing_cash));const floor=C.scenarios[SCEN].summary.floor;const maxV=Math.max(floor*1.1,...all)*1.06,minV=Math.min(0,...all)*1.1;const y=v=>padT+(H-padT-padB)*(1-(v-minV)/(maxV-minV));
  let g='';for(let i=0;i<=4;i++){const v=minV+(maxV-minV)*i/4;g+=`<line class="grid" x1="${padL}" x2="${W-padR}" y1="${y(v)}" y2="${y(v)}"/><text x="${padL-8}" y="${y(v)+4}" text-anchor="end" fill="#6b7177">${v<0?'−':''}$${Math.abs(Math.round(v/1000))}k</text>`;}
