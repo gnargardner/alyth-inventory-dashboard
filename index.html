@@ -33,7 +33,7 @@ tr.style{cursor:pointer}tr.style:hover{background:#fafbfb}tr.var td{color:#444;b
 <div id="gate" style="display:none"><div><b>Alyth Inventory</b><p style="color:#6b7177">Enter the dashboard passphrase.</p><input id="pw" type="password" placeholder="passphrase"><button onclick="unlock()">Open</button><p id="err" style="color:#b42318"></p></div></div>
 <header><h1>Alyth inventory <small id="sub"></small></h1><nav><button class="tab active" onclick="mode('inv')">Inventory</button><button class="tab" onclick="mode('debt')">Debt &amp; financing</button><button class="tab" onclick="mode('sav')">Savings</button><button class="tab" onclick="mode('cf')">Cash flow</button><button class="tab" onclick="mode('ch')">Profit &amp; cash</button></nav><small id="gen"></small></header>
 <div class="cards" id="cards"></div><div class="panel" id="panel"></div>
-<script src="data.enc.js?v=1791581401"></script>
+<script src="data.enc.js?v=1791581460"></script>
 <script>
 const $=s=>document.querySelector(s);
 const TIP={
@@ -83,11 +83,13 @@ function river(title, src, items, opts={}){
  if(shortV>0){const sh=shortV*scale;const y0=srcY+srcH;g+=`<rect x="${xS}" y="${y0}" width="${nodeW}" height="${sh}" rx="3" fill="${PAL.short}"/><text x="${xS-10}" y="${y0+sh/2+4}" text-anchor="end" font-weight="700" fill="${PAL.short}">${lo.label}</text><text x="${xS-10}" y="${y0+sh/2+18}" text-anchor="end" fill="${PAL.short}">${fmt$(shortV)}</text>`;}
  // targets stacked
  const tgt=[...posItems];if(lo&&lo.val>0)tgt.push({key:'left',label:lo.label,val:lo.val,color:lo.color,isLeft:true});
- let yT=padT;const bands=[];const tiny=[];
+ let yT=padT;const bands=[];const tiny=[];let labels='';let lastLabelY=-99;
  for(const t of tgt){const h=t.val*scale;
   g+=`<rect x="${xT}" y="${yT}" width="${nodeW}" height="${Math.max(2,h)}" rx="3" fill="${t.color}"/>`;
-  const pct=Math.round(t.val/total*100);
-  if(h>=13||t.isLeft)g+=`<text x="${xT+nodeW+10}" y="${yT+h/2+4}" font-weight="${t.isLeft?700:600}" fill="${t.isLeft?t.color:'#1a1a1a'}">${t.label} <tspan fill="#555" font-weight="400">${fmt$(t.val)} · ${pct}¢ of each $</tspan></text>`;else tiny.push(`${t.label} ${fmt$(t.val)}`);
+  const pct=t.val/total*100;const pctTxt=pct>=1?Math.round(pct)+'¢':pct.toFixed(1)+'¢';
+  let ly=yT+h/2+4;if(ly<lastLabelY+16)ly=lastLabelY+16;lastLabelY=ly;
+  if(Math.abs(ly-(yT+h/2+4))>2)labels+=`<line x1="${xT+nodeW}" x2="${xT+nodeW+8}" y1="${yT+h/2}" y2="${ly-4}" stroke="#999"/>`;
+  labels+=`<text x="${xT+nodeW+10}" y="${ly}" font-weight="${t.isLeft?700:600}" fill="${t.isLeft?t.color:'#1a1a1a'}">${t.label} <tspan fill="#555" font-weight="400">${fmt$(t.val)} · ${pctTxt} of each $</tspan></text>`;
   // band from source
   const y0=yS,y1=yS+h;const mx=(xS+nodeW+xT)/2;
   g+=`<path d="M${xS+nodeW},${y0} C${mx},${y0} ${mx},${yT} ${xT},${yT} L${xT},${yT+h} C${mx},${yT+h} ${mx},${y1} ${xS+nodeW},${y1} Z" fill="${t.color}" opacity="${t.isLeft?0.55:0.35}"><title>${t.label}: ${fmt$(t.val)} (${pct}% of ${src.label.toLowerCase()})</title></path>`;
@@ -96,8 +98,8 @@ function river(title, src, items, opts={}){
  if(opts.stage2&&lo&&lo.val>0){const L=bands.find(b=>b.t.isLeft);if(L){let y2=L.y;const sum2=opts.stage2.reduce((a,i)=>a+Math.max(0,i.val),0)||1;const sc2=L.h/sum2;const xA=xT+nodeW,xB=xT2;const mx=(xA+xB)/2;let yB=L.y;
   for(const t of opts.stage2){if(t.val<=0)continue;const h=t.val*sc2;g+=`<rect x="${xB}" y="${yB}" width="${nodeW}" height="${Math.max(2,h)}" rx="3" fill="${t.color}"/><text x="${xB+nodeW+8}" y="${yB+h/2+4}" font-weight="700" fill="${t.color}">${t.label}</text><text x="${xB+nodeW+8}" y="${yB+h/2+18}" fill="#555">${fmt$(t.val)}</text>`;
    g+=`<path d="M${xA},${y2} C${mx},${y2} ${mx},${yB} ${xB},${yB} L${xB},${yB+h} C${mx},${yB+h} ${mx},${y2+h} ${xA},${y2+h} Z" fill="${t.color}" opacity=".45"><title>${t.label}: ${fmt$(t.val)}</title></path>`;y2+=h;yB+=h+gap;}}}
- if(tiny.length)g+=`<text x="${xT+nodeW+10}" y="${H-4}" fill="#6b7177" font-size="11.5">too small to label: ${tiny.join(' · ')}</text>`;
- return `<div style="font-size:13px;font-weight:600;margin:14px 0 2px">${title}</div><svg class="viz" style="max-width:1040px" viewBox="0 0 ${W} ${H}">${g}</svg>`;}
+ g+=labels;const Hh=Math.max(H,lastLabelY+16);
+ return `<div style="font-size:13px;font-weight:600;margin:14px 0 2px">${title}</div><svg class="viz" style="max-width:1040px" viewBox="0 0 ${W} ${Hh}">${g}</svg>`;}
 function waterfall(title, steps, opts={}){
  // steps=[{label,val,type:'start'|'down'|'sub'|'total'|'end',color}] ; running total drawn as floating bars
  const W=opts.W||980,H=260,padL=60,padR=14,padT=24,padB=56;let run=0;const bars=[];let maxV=0,minV=0;
