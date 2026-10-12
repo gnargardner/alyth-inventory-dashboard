@@ -28,6 +28,7 @@ tr.style{cursor:pointer}tr.style:hover{background:#fafbfb}tr.var td{color:#444;b
 .tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:11px;background:#eee}.tag.DEAD{background:#fde8e6;color:var(--red)}.tag.OVER{background:#fff1e0;color:var(--amb)}.tag.OUT{background:#e8f0fe;color:var(--blu)}.tag.LOW{background:#fff7d6;color:#8a6d00}.tag.OK{background:#e6f4ea;color:var(--grn)}
 .wrap{max-height:70vh;overflow:auto}.bar{height:6px;background:#eee;border-radius:3px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc)}
 #gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center}#gate div{background:#fff;padding:24px;border-radius:10px;border:1px solid var(--line);width:320px}#gate input{width:100%;padding:8px;margin:8px 0;border:1px solid var(--line);border-radius:6px}
+.alertbar{max-width:1440px;margin:10px auto 0;padding:0 20px}.alertbar .bx{background:#fde8e6;border:2px solid #b42318;border-radius:10px;padding:12px 16px;color:#7a1a12}.alertbar .hdr{display:flex;align-items:center;gap:12px;font-weight:700;font-size:16px;cursor:pointer}.alertbar .hdr .n{background:#b42318;color:#fff;border-radius:16px;padding:2px 10px;font-size:14px}.alertbar .hdr small{font-weight:500;color:#7a1a12;font-size:13px}.alertbar table{margin-top:10px;background:#fff;border-radius:8px}.alertbar td,.alertbar th{color:#1a1a1a}.sev{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}.sev.red{background:#b42318}.sev.amber{background:#eda100}.sev.ok{background:#067647}
 .cl-ctl{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#fafbfb;margin:8px 0 14px}.cl-ctl .big{font-size:34px;font-weight:800;min-width:84px;line-height:1}input[type=range].cl{width:280px;accent-color:#b42318}.btn{font:inherit;font-size:12px;padding:6px 12px;border:1px solid var(--ink);border-radius:14px;background:var(--ink);color:#fff;cursor:pointer}.btn:hover{opacity:.85}
 .coupons{display:grid;grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:10px;margin:8px 0 6px}.cpn{border:2px dashed #c9ccd0;border-radius:12px;padding:12px 14px;background:#fff}.cpn .pct{font-size:26px;font-weight:800;color:var(--red);line-height:1;letter-spacing:-.5px}.cpn .nm{font-weight:600;margin:6px 0 3px;font-size:13px;line-height:1.3}.cpn .ln{font-size:12px;color:#444;margin-top:2px}.cpn .ln b{color:var(--ink)}
 .vd{display:inline-block;padding:1px 7px;border-radius:9px;font-size:11px;font-weight:600;white-space:nowrap}.vd.in{background:#e6f4ea;color:var(--grn)}.vd.out{background:#eee;color:#666}.vd.deep{background:#fde8e6;color:var(--red)}.vd.beyond{background:#fff1e0;color:var(--amb)}.vd.slow{background:#fff7d6;color:#8a6d00}
@@ -35,8 +36,8 @@ tr.style{cursor:pointer}tr.style:hover{background:#fafbfb}tr.var td{color:#444;b
 </style></head><body>
 <div id="gate" style="display:none"><div><b>Alyth Inventory</b><p style="color:#6b7177">Enter the dashboard passphrase.</p><input id="pw" type="password" placeholder="passphrase"><button onclick="unlock()">Open</button><p id="err" style="color:#b42318"></p></div></div>
 <header><h1>Alyth inventory <small id="sub"></small></h1><nav><button class="tab active" onclick="mode('inv')">Inventory</button><button class="tab" onclick="mode('cl')">Sell-through</button><button class="tab" onclick="mode('debt')">Debt &amp; financing</button><button class="tab" onclick="mode('sav')">Savings</button><button class="tab" onclick="mode('cf')">Cash flow</button><button class="tab" onclick="mode('ch')">Profit &amp; cash</button></nav><small id="gen"></small></header>
-<div class="cards" id="cards"></div><div class="panel" id="panel"></div>
-<script src="data.enc.js?v=1791848060"></script>
+<div id="alert"></div><div class="cards" id="cards"></div><div class="panel" id="panel"></div>
+<script src="data.enc.js?v=1791849165"></script>
 <script>
 const $=s=>document.querySelector(s);
 const TIP={
@@ -251,10 +252,11 @@ function renderCL(){if(!D.cl||!D.cl.items||!D.cl.items.length){$('#cards').inner
   h+=`<div><div style="font-size:12px;color:var(--mut)">${hd('Sale length','cl_len')}</div><div class="sortbar" style="margin:4px 0 0">${CLLEN.map(([v,l])=>`<button class="${CLL===v?'on':''}" onclick="CLL=${v};render()">${l}</button>`).join('')}</div></div>`;}
  else{h+=`<div class="cl-ctl"><div><div style="font-size:12px;color:var(--mut)">${hd('How fast should the excess go?','cl_speed')}</div><div class="sortbar" style="margin:4px 0 0">${[[1,'1 month (big markdown)'],[3,'3 months'],[6,'6 months (normal clearance)']].map(([v,l])=>`<button class="${CLW===v?'on':''}" onclick="CLW=${v};render()">${l}</button>`).join('')}</div></div>`;}
  h+=`<div><div style="font-size:12px;color:var(--mut)">${hd('Goal: months of stock to keep','cl_target')}</div><div class="sortbar" style="margin:4px 0 0">${[6,7,8].map(v=>`<button class="${CLT===v?'on':''}" onclick="CLT=${v};render()">${v} months</button>`).join('')}</div></div>`;
- h+=`<div style="margin-left:auto;display:flex;gap:8px;align-self:center"><button class="btn" onclick="clCopy(false)">Copy price list</button><button class="btn" onclick="clCopy(true)">Download CSV</button><span id="clmsg" style="font-size:12px;color:var(--grn);align-self:center"></span></div></div>`;
+ h+=`</div>`;
  h+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(460px,1fr));gap:24px;align-items:start">${clLadder(styles)}${clDial()}</div>`;
  h+=clCoupons(styles);
  h+=clTable(styles,vars);
+ h+=clRunning();
  h+=clAssump();
  $('#panel').innerHTML=h;}
 function clLadder(styles){const c=D.cl.cfg;const item=CLMODE==='item';const rows=styles.filter(s=>item?s.flag!=='ok':s.flag==='in').sort((a,b)=>b.tied-a.tied).slice(0,18);if(!rows.length)return '<div><p class="d" style="display:block">No style is overstocked at this goal.</p></div>';
@@ -307,6 +309,18 @@ function clTable(styles,vars){const item=CLMODE==='item';
    else h+=`<td>${on?fmtN(v.sell):''}</td><td>${on?fmtN(v.units)+' <small style="color:#999">vs '+fmtN(v.units0)+'</small>':''}</td><td>${on?`$${(it.price*(1-CLP)).toFixed(2)} <s style="color:#999">$${it.price.toFixed(2)}</s>`:'$'+it.price.toFixed(2)} <small style="color:#999">floor $${it.floor.toFixed(0)}</small></td>`;
    h+=`<td>${v.cash?fmt$(v.cash):''}</td><td>${v.margin?fmt$(v.margin):''}</td><td style="color:${v.gain>0?'var(--grn)':v.gain<0?'var(--red)':'inherit'}">${v.gain?(v.gain<0?'−':'')+fmt$(Math.abs(v.gain)):''}</td>${item?`<td class="tl">${chip(v.flag)}</td>`:''}</tr>`;}});
  return h+'</table></div>';}
+let ALERTOPEN=false;
+Object.assign(TIP,{al_bar:'Every size that is marked down in Shopify right now (compare-at price above the selling price), judged against what the planner says it needs. Red = should not be on sale at all (it sells fine at full price, or it will need reordering soon) or is more than 15 points deeper than needed. Amber = 5-15 points too deep, or has run longer than it needed to. Sitewide discount codes and automatic discounts are not visible here, only price markdowns.',
+ al_at:'The markdown running now: 1 − selling price ÷ compare-at price. A range means sizes differ.', al_should:'The % off the planner would give it to clear its excess in 3 months; 0% when it is not overstocked.',
+ al_days:'Days the markdown has been running, counted from the daily snapshots (starts counting from the day this check went live, 2026-10-12).', al_cost:'Price given away this month beyond the recommended depth: units expected to sell at the current markdown × compare-at price × the extra % off.', al_do:'The shortest fix.'});
+function alertBar(){const A=D.cl&&D.cl.alerts;if(!A||!A.totals.styles)return '';const T=A.totals;const bad=A.styles.filter(x=>x.sev!=='ok');
+ let h=`<div class="alertbar"><div class="bx"><div class="hdr" onclick="ALERTOPEN=!ALERTOPEN;render()"><span class="n">${T.styles}</span><span>${hd('styles are discounted deeper than they should be','al_bar')}</span><small>${T.red} should not be on sale at all · about ${fmt$(T.cost_m)} a month given away · ${T.on_sale_styles} styles on sale in total</small><span style="margin-left:auto;font-size:13px;font-weight:500">${ALERTOPEN?'hide ▲':'show the list ▼'}</span></div>`;
+ if(ALERTOPEN)h+=alertTable(bad);
+ return h+'</div></div>';}
+function alertTable(rows){const pr=x=>Math.round(x*100)+'%';
+ return `<table><tr><th class="tl">style</th><th>sizes</th><th>${hd('at','al_at')}</th><th>${hd('should be','al_should')}</th><th>${hd('months of stock','cl_hold_now')}</th><th>${hd('days on sale','al_days')}</th><th>${hd('$/mo given away','al_cost')}</th><th class="tl">why</th><th class="tl">${hd('do','al_do')}</th></tr>`+rows.map(x=>`<tr><td class="tl"><i class="sev ${x.sev}"></i>${x.product_title}</td><td>${x.sizes_flagged}/${x.sizes_on_sale}</td><td><b style="color:var(--red)">${x.cur_min===x.cur_max?pr(x.cur_max):pr(x.cur_min)+'–'+pr(x.cur_max)}</b></td><td>${pr(x.rec_max)}</td><td>${x.hold_now>=999?'∞':x.hold_now.toFixed(1)}${x.reorder_due?' <span class="tag LOW">reorder due</span>':''}</td><td>${x.days==null?'new':x.days}</td><td>${x.cost_m?fmt$(x.cost_m):''}</td><td class="tl" style="white-space:normal"><small>${x.why}</small></td><td class="tl"><b>${x.do}</b></td></tr>`).join('')+'</table>';}
+function clRunning(){const A=D.cl&&D.cl.alerts;if(!A||!A.totals.on_sale_styles)return `<h2 style="margin-top:18px">${hd('Markdowns running in Shopify right now','al_bar')}</h2><p class="d" style="display:block">None: no size has a compare-at price above its selling price.</p>`;
+ const T=A.totals;return `<h2 style="margin-top:18px">${hd('Markdowns running in Shopify right now','al_bar')} <small style="color:var(--mut);font-weight:400">· ${T.on_sale_styles} styles, ${T.on_sale_variants} sizes · ${T.styles} need a change</small></h2><div class="wrap" style="max-height:60vh">${alertTable(A.styles)}</div>`;}
 function clSrt(k){if(CLSORT===k)CLDIR=-CLDIR;else{CLSORT=k;CLDIR=-1;}render();}
 function clAssump(){const c=D.cl.cfg,M=D.cl.measured||{rows:[]};
  let h=`<details style="margin-top:14px"><summary style="font-size:12px;color:var(--mut);cursor:pointer">how this is calculated, and what it assumes</summary><div style="font-size:13px;line-height:1.55;margin-top:6px">
@@ -316,10 +330,6 @@ function clAssump(){const c=D.cl.cfg,M=D.cl.measured||{rows:[]};
  <p><b>Net</b> = revenue over 18 months with the markdown minus revenue without it, with carrying cost charged every month the stock sits (${Math.round(c.coc*100)}% a year cost of money + ${Math.round(c.obs*100)}% a year of shelf ageing, on cost) and anything unsold at the end valued at ${Math.round(c.salvage*100)}% of cost. Styles with fewer than ${c.min_excess} excess units are ignored.</p>`;
  if(M.rows&&M.rows.length){h+=`<p><b>Measured sales so far</b>: `+M.rows.map(r=>`${r.scope} ${Math.round(r.pct_off*100)}% off ${r.start}→${r.end}: ${r.lift}× normal${r.eps?' (e='+r.eps+')':''}`).join('; ')+(M.eps?`. Blended elasticity in use: ${M.eps}.`:' (three sales needed before the model switches to measured lift).')+'</p>';}else{h+='<p><b>Measured sales so far</b>: none logged. After each sale add a line to config/markdowns.csv and the lift will be learned from it.</p>';}
  return h+'</div></details>';}
-function clCopy(download){const item=CLMODE==='item';const vars=clVars().filter(v=>item?(v.flag==='clear'||v.flag==='slow'):v.flag==='in');
- const lines=[['variant_id','sku','product','variant','current_price','sale_price','pct_off','units_to_sell_then_full_price','keep'].join(',')].concat(vars.map(v=>[v.it.variant_id,v.it.sku,'"'+v.it.product_title.replace(/"/g,'""')+'"','"'+v.it.variant_title.replace(/"/g,'""')+'"',v.it.price.toFixed(2),(v.it.price*(1-v.p)).toFixed(2),Math.round(v.p*100),Math.round(v.sell),Math.round(v.keep)].join(',')));
- const txt=lines.join('\n');if(download){const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(txt);a.download='alyth_price_list_'+(item?'clearance':'sale_'+Math.round(CLP*100))+'.csv';document.body.appendChild(a);a.click();a.remove();}
- else{try{navigator.clipboard.writeText(txt);}catch(e){}}const m=$('#clmsg');if(m){m.textContent=vars.length+' sizes '+(download?'downloaded':'copied');setTimeout(()=>{if(m)m.textContent='';},2500);}}
 function renderCH(){const P=D.pnl;if(!P){$('#panel').innerHTML='<p>No profit &amp; cash data.</p>';return;}const CH=P.channels;const rows=P.rollup[PPER].filter(r=>r.channel===PCH);const hist=rows.filter(r=>!r.projected);const last=hist[hist.length-1]||rows[0];
  const fmtS=x=>(x<0?'−':'')+fmt$(Math.abs(x));
  // last-12-months KPI strip for the selected channel
@@ -515,7 +525,7 @@ const CARDS=[
  {k:'inc',cls:'',l:'On order',v:d=>fmt$(d.kpi.incoming_cost),s:d=>fmtN(d.kpi.incoming_units)+' units on open POs incl. drafts',d:'Open purchase orders (ordered and draft) counted as incoming.',filter:v=>v.incoming>0,col:'incoming'},
  {k:'season',cls:'',l:'Seasonality',v:d=>'12-month curve',s:d=>'forecast by month',d:'Month-of-year demand index per category, 1.0 = average month, from full calendar years. Below: total forecast units by month.'}
 ];
-function render(){$('#sub').textContent='· data through '+D.asof+', stock '+D.snapshot;$('#gen').textContent='generated '+D.generated;
+function render(){$('#sub').textContent='· data through '+D.asof+', stock '+D.snapshot;$('#gen').textContent='generated '+D.generated;$('#alert').innerHTML=alertBar();
  document.body.classList.toggle('compact',MODE==='inv');$('#cards').style.display=(MODE==='inv'||MODE==='cf'||MODE==='ch'||MODE==='cl')?'block':'';
  if(MODE==='debt'&&D.fin){return renderDebt();}
  if(MODE==='sav'&&D.sav){return renderSav();}
