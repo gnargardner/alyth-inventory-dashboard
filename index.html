@@ -41,7 +41,7 @@ tr.style{cursor:pointer}tr.style:hover{background:#fafbfb}tr.var td{color:#444;b
 <div id="gate" style="display:none"><div><b>Alyth Inventory</b><p style="color:#6b7177">Enter the dashboard passphrase.</p><input id="pw" type="password" placeholder="passphrase"><button onclick="unlock()">Open</button><p id="err" style="color:#b42318"></p></div></div>
 <header><h1>Alyth inventory <small id="sub"></small></h1><nav><button class="tab active" onclick="mode('inv')">Inventory</button><button class="tab" onclick="mode('cl')">Sell-through</button><button class="tab" onclick="mode('lau')">Launches</button><button class="tab" onclick="mode('debt')">Debt &amp; financing</button><button class="tab" onclick="mode('sav')">Savings</button><button class="tab" onclick="mode('cf')">Cash flow</button><button class="tab" onclick="mode('ch')">Profit &amp; cash</button><button class="tab" onclick="mode('bk')">Books</button><button class="tab" onclick="mode('ab')">Website tests</button><button class="tab" onclick="mode('ph')">Models &amp; photos</button><button class="tab" onclick="mode('of')">Outfits</button></nav><small id="gen"></small></header>
 <div id="alert"></div><div class="cards" id="cards"></div><div class="panel" id="panel"></div><button id="fbbtn" onclick="fbList()">Ask a question</button>
-<script src="data.enc.js?v=1793912659"></script>
+<script src="data.enc.js?v=1793913124"></script>
 <script>
 const $=s=>document.querySelector(s);
 const TIP={
@@ -564,7 +564,7 @@ function renderCF(){const C=D.cf12;if(!C){$('#panel').innerHTML='<p>No cash flow
   {cls:S.net_12m<0?'red':'grn',l:'12-month net cash',v:fmtS(S.net_12m),s:'start '+fmt$(S.start_cash)+' → end '+fmt$(S.end_cash),t:'net12'},
   {cls:S.low_cash<S.floor?'red':'grn',l:'Lowest point',v:fmt$(S.low_cash),s:monthName(S.low_month)+' · cushion '+fmt$(S.floor)+' · '+S.months_below+' months under',t:'lowpt'},
   {cls:'amb',l:'Wayflyer sweep',v:fmt$(S.total_sweep),s:'taken from sales this year · clears '+(S.wayflyer_clear.length===7?monthName(S.wayflyer_clear):S.wayflyer_clear),t:'sweep'},
-  {cls:'blu',l:'Max owner pay',v:fmt$(S.max_owner_pay_floor)+'/mo',s:'keeping the cushion · '+fmt$(S.max_owner_pay_zero)+'/mo keeping cash above zero'+(S.owner_pay_set?'':' · currently modeled at $0'),t:'maxpay'},
+  (C.owner_pay_answer?{cls:'red',l:'Owner pay that fits (Nov)',v:fmt$((C.owner_pay_answer.answer||{})[SCEN]||0),s:'through Feb 28, daily low ≥ $0 · same at Wayflyer 15% · as of '+C.owner_pay_answer.as_of,t:'maxpay'}:{cls:'blu',l:'Max owner pay',v:fmt$(S.max_owner_pay_floor)+'/mo',s:'keeping the cushion · '+fmt$(S.max_owner_pay_zero)+'/mo keeping cash above zero'+(S.owner_pay_set?'':' · currently modeled at $0'),t:'maxpay'}),
   {cls:'',l:'Inventory on credit',v:fmt$(S.inventory_on_credit),s:'bought this year · '+fmt$(S.interest_on_inventory)+' interest',t:'inv_pay'}
  ].map(c=>`<div class="card ${c.cls}" style="cursor:default"><div class="l">${hd(c.l,c.t)}</div><div class="v">${c.v}</div><div class="s">${c.s}</div></div>`).join('')+'</div>';
  let h=`<h2>${hd('Company cash flow, next 12 months','cf_tab')}</h2><div class="sortbar">${hd('Sales case','scen')} `+['low','medium','high'].map(k=>`<button class="${SCEN===k?'on':''}" onclick="SCEN='${k}';render()">${k} ${k==='low'?'−15%':k==='high'?'+15%':'last year +3%'}</button>`).join('')+`</div>`;
