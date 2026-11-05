@@ -40,7 +40,7 @@ tr.style{cursor:pointer}tr.style:hover{background:#fafbfb}tr.var td{color:#444;b
 <div id="gate" style="display:none"><div><b>Alyth Inventory</b><p style="color:#6b7177">Enter the dashboard passphrase.</p><input id="pw" type="password" placeholder="passphrase"><button onclick="unlock()">Open</button><p id="err" style="color:#b42318"></p></div></div>
 <header><h1>Alyth inventory <small id="sub"></small></h1><nav><button class="tab active" onclick="mode('inv')">Inventory</button><button class="tab" onclick="mode('cl')">Sell-through</button><button class="tab" onclick="mode('lau')">Launches</button><button class="tab" onclick="mode('debt')">Debt &amp; financing</button><button class="tab" onclick="mode('sav')">Savings</button><button class="tab" onclick="mode('cf')">Cash flow</button><button class="tab" onclick="mode('ch')">Profit &amp; cash</button><button class="tab" onclick="mode('bk')">Books</button><button class="tab" onclick="mode('ab')">Website tests</button><button class="tab" onclick="mode('ph')">Models &amp; photos</button><button class="tab" onclick="mode('of')">Outfits</button></nav><small id="gen"></small></header>
 <div id="alert"></div><div class="cards" id="cards"></div><div class="panel" id="panel"></div><button id="fbbtn" onclick="fbList()">Ask a question</button>
-<script src="data.enc.js?v=1793885646"></script>
+<script src="data.enc.js?v=1793893624"></script>
 <script>
 const $=s=>document.querySelector(s);
 const TIP={
@@ -68,7 +68,7 @@ const TIP={
  as_of:'The date the balance was read from the lender\'s website. Never from Xero.',
  next_payment:'The next required payment and its day of the month.',
  cost_yr:'What this facility costs over a year at today\'s balance and rate; for Wayflyer, the fees on the open draws.',
- guaranty:'Who is personally on the hook if the company cannot pay. Alysha\'s guaranty covers every U.S. Bank obligation, which is why nothing new is opened at U.S. Bank until she is released.',
+ guaranty:'Who is personally on the hook if the company cannot pay. Alysha\'s guaranty covers every U.S. Bank obligation and U.S. Bank will not release her, so nothing new is opened at U.S. Bank. Theresa guarantees everything as 80.13% owner.',
  moves:'Paying one debt off with another only helps when the new money is cheaper for the time you will hold it, or when the old facility charges by the day and can be paid early without penalty. Wayflyer is neither: its fee is fixed the day the money lands.',
  annual:'Dollars saved per year if the item is done, recomputed from live balances, purchase levels and inventory on every run.',
  effort:'How hard it is: one dot is minutes, five dots is a project.',
@@ -632,7 +632,7 @@ function renderSav(){const S=D.sav;const t=S.totals;
  $('#cards').innerHTML=[
   {cls:'grn',l:'Identified savings, open items',v:fmt$(t.open)+'/yr',s:fmt$(t.open/12)+' a month across '+t.count_open+' open items'},
   {cls:'blu',l:'Quick wins',v:fmt$(t.quick)+'/yr',s:t.count_quick+' items that take an hour or less'},
-  {cls:'amb',l:'Waiting on the buyout closing',v:fmt$(t.blocked)+'/yr',s:'unlocks when Alysha is released from the U.S. Bank guaranties'},
+  {cls:'amb',l:'Blocked for now',v:fmt$(t.blocked)+'/yr',s:'mostly a new SBA loan, which waits until about May 2027 (six months after the redemption) at a bank other than U.S. Bank'},
   {cls:'',l:'Banked so far',v:fmt$(t.done)+'/yr',s:'items marked done'},
   {cls:'red',l:'If the whole stack were optimized',v:fmt$(S.stack_optimized.total)+'/yr',s:'card surcharge '+fmt$(S.stack_optimized.surcharge)+' + Wayflyer vs line/cards '+fmt$(S.stack_optimized.wayflyer)+' + card interest '+fmt$(S.stack_optimized.cards)}
  ].map(c=>`<div class="card ${c.cls}" style="cursor:default"><div class="l">${c.l}</div><div class="v">${c.v}</div><div class="s">${c.s}</div></div>`).join('');
