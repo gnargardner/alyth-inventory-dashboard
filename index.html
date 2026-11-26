@@ -314,7 +314,7 @@ function pubFit(){const P=$('#panel');$('#cards').innerHTML='';const q=(PUB.q||'
  h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:10px">'+D.pub.rows.filter(r=>!q||r.t.toLowerCase().includes(q)||((live[r.h]||{}).notes||'').toLowerCase().includes(q)).map(r=>{const l=live[r.h],cur=PUB.drafts[r.h]!=null?PUB.drafts[r.h]:(l&&l.fit!=null?+l.fit:D.pub.fit[r.h]),mds=PUB.mdrafts[r.h]||{},dirty=PUB.drafts[r.h]!=null||Object.keys(mds).length>0,ml=l?pubLines(l.notes):[],mh=ml.length?`<div style="margin-top:8px;display:grid;gap:4px">${ml.map(x=>{const d=mds[x.k],v=d||x.size;return `<label style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px"><span style="min-width:0">${fbEsc(x.k)}${d?` <span style="color:#175cd3">was ${x.size}</span>`:''}</span><select data-h="${r.h}" data-k="${fbEsc(x.k)}" onchange="pubSize(this)" aria-label="Size ${fbEsc(x.k)} wears" style="font:inherit;font-size:12.5px;padding:3px 4px;border:1px solid ${d?'#175cd3':'var(--line)'};border-radius:6px">${Object.keys(PUBSHORT).map(s=>`<option ${s===v?'selected':''}>${s}</option>`).join('')}</select></label>`}).join('')}</div>`:'';return `<div style="border:1px solid ${dirty?'#175cd3':'var(--line)'};border-radius:10px;padding:10px;display:grid;grid-template-columns:48px 1fr;gap:10px"><div style="width:48px;height:64px;border-radius:6px;background:#eee center/cover${r.img?` url('${r.img}')`:''}"></div><div><b style="font-size:13.5px">${fbEsc(r.t)}</b><div class="fbs">${r.g==='m'?"Men's":"Women's"}${r.n?' · <span title="The fit text written in the product before fit picks existed. The product page shows only the pick, so this text is no longer shown where a pick exists.">old fit text, not shown on the site: '+fbEsc(r.n)+'</span>':''}${dirty?' · <span style="color:#175cd3">not published</span>':''}</div><div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">${[-2,-1,0,1,2].map(v=>`<button onclick="pubPick('${r.h}',${v})" style="border:1px solid ${cur===v?'#111':'var(--line)'};background:${cur===v?'#111':'#fff'};color:${cur===v?'#fff':'#333'};border-radius:7px;padding:4px 7px;font:inherit;font-size:12px;cursor:pointer">${PUBLBL[v]}</button>`).join('')}</div>${mh}</div></div>`}).join('')+'</div>';P.innerHTML=h;}
 async function pubSize(e){const h=e.dataset.h,k=e.dataset.k,v=e.value,l=PUB.prods.find(p=>p.handle===h),x=l&&pubLines(l.notes).find(y=>y.k===k),md=PUB.mdrafts[h]=PUB.mdrafts[h]||{};if(x&&x.size===v)delete md[k];else md[k]=v;if(!Object.keys(md).length)delete PUB.mdrafts[h];pubFit();try{await pubShopSet('model_drafts',PUB.mdrafts);pubBuild();rvPaint();}catch(err){alert('Could not save: '+err.message)}}
 async function pubPick(h,v){const l=PUB.prods.find(p=>p.handle===h);if(l&&l.fit!=null&&+l.fit===v)delete PUB.drafts[h];else if(!l||l.fit==null){if(D.pub.fit[h]===v)delete PUB.drafts[h];else PUB.drafts[h]=v}else PUB.drafts[h]=v;pubFit();try{await pubShopSet('fit_drafts',PUB.drafts);pubBuild();rvPaint();}catch(e){alert('Could not save: '+e.message)}}
-</script><script src="data.enc.js?v=1795726148"></script><script>/* All user-facing copy lives here. Functions are templates, not financial calculations. */
+</script><script src="data.enc.js?v=1795726722"></script><script>/* All user-facing copy lives here. Functions are templates, not financial calculations. */
 const CFX_COPY = {
  brand:'ALYTH / ACTIVE',private:'Private operations',title:'Cash flow',subtitle:'See what earns, what leaves, and what is left.',range:'Time range',group:'Group by',month:'Month',quarter:'Quarter',year:'Year',from:'From',to:'To',start:'Start',end:'End',custom:'Custom range',
  presets:{this:'This month',last:'Last month',last3:'Last 3 months',last12:'Last 12 months',ytd:'Year to date',next3:'Next 3 months',next12:'Next 12 months',custom:'Custom range'},
@@ -1184,6 +1184,7 @@ Object.assign(TIP,{
  tc_bots:'What was taken out and why. A group of visits that placed an order is never counted as bots. Bots do sometimes click add to bag, so those clicks are taken out with them.'});
 let TCS=(()=>{try{return JSON.parse(localStorage.getItem('alyth_tc')||'null')}catch(e){return null}})()||{};
 TCS=Object.assign({p:'7d',m:'conv',cmp:'prev',a:'',b:'',seg:'ch'},TCS);
+if(TCS.p==='today')TCS.p='yest';   // a saved Today view opens on Yesterday now
 function tcSave(){try{localStorage.setItem('alyth_tc',JSON.stringify(TCS))}catch(e){}}
 const tcD=s=>new Date(Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6,8)));
 const tcS=d=>d.toISOString().slice(0,10).replace(/-/g,'');
@@ -1191,9 +1192,10 @@ const tcAdd=(s,n)=>{const d=tcD(s);d.setUTCDate(d.getUTCDate()+n);return tcS(d)}
 const tcN=(a,b)=>Math.round((tcD(b)-tcD(a))/864e5)+1;
 const tcMD=(s,y)=>tcD(s).toLocaleDateString('en-US',Object.assign({month:'short',day:'numeric',timeZone:'UTC'},y?{year:'numeric'}:{}));
 const tcISO=s=>s?s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8):'';
-const TC_PRESETS=[['today','Today'],['yest','Yesterday'],['7d','Last 7 days'],['30d','Last 30 days'],['90d','Last 90 days'],['mtd','Month to date'],['lm','Last month'],['365d','Last 365 days'],['custom','Custom']];
-function tcRange(T){const last=T.days[T.days.length-1],yest=tcAdd(last,-1);let a,b;
- const p=TCS.p;if(p==='today'){a=b=last}else if(p==='yest'){a=b=yest}else if(p==='mtd'){b=last;a=last.slice(0,6)+'01'}
+// Bryan 2026-11-26: no Today view. The data stops at yesterday (closed_day.py), so the last day in the list is yesterday, a full day.
+const TC_PRESETS=[['yest','Yesterday'],['7d','Last 7 days'],['30d','Last 30 days'],['90d','Last 90 days'],['mtd','Month to date'],['lm','Last month'],['365d','Last 365 days'],['custom','Custom']];
+function tcRange(T){const last=T.days[T.days.length-1],yest=last;let a,b;
+ const p=TCS.p;if(p==='today'||p==='yest'){a=b=yest}else if(p==='mtd'){b=last;a=last.slice(0,6)+'01'}
  else if(p==='lm'){const d=tcD(last.slice(0,6)+'01');d.setUTCDate(0);b=tcS(d);a=b.slice(0,6)+'01'}
  else if(p==='custom'){a=TCS.a||tcAdd(yest,-6);b=TCS.b||yest}
  else{const n={'7d':7,'30d':30,'90d':90,'365d':365}[p]||7;b=yest;a=tcAdd(b,-(n-1))}
@@ -1284,7 +1286,7 @@ function tcRender(){const box=document.getElementById('tcbox');if(!box)return;fb
  let h=`<div class="tcbar"><div class="pills">`+TC_PRESETS.map(([k,l])=>`<button class="pl ${TCS.p===k?'on':''}" onclick="tcSet('p','${k}')">${l}</button>`).join('')+`</div>`;
  if(TCS.p==='custom')h+=`<input type="date" value="${tcISO(R.a)}" min="${tcISO(T.days[0])}" max="${tcISO(R.last)}" onchange="tcDate('a',this.value)"> to <input type="date" value="${tcISO(R.b)}" min="${tcISO(T.days[0])}" max="${tcISO(R.last)}" onchange="tcDate('b',this.value)">`;
  h+=`<select onchange="tcSet('cmp',this.value)"><option value="prev" ${TCS.cmp==='prev'?'selected':''}>vs. previous period</option><option value="year" ${TCS.cmp==='year'?'selected':''}>vs. same weekdays last year</option><option value="none" ${TCS.cmp==='none'?'selected':''}>no comparison</option></select>`;
- h+=`<span class="rng"><b style="color:var(--ink)">${rl}</b>${cl?' vs '+cl:TCS.cmp!=='none'?' · no comparison: Google Analytics history starts '+tcMD(T.days[0],true):''}${todayIn?' · today is partial (Google lags a few hours)':''}</span></div>`;
+ h+=`<span class="rng"><b style="color:var(--ink)">${rl}</b>${cl?' vs '+cl:TCS.cmp!=='none'?' · no comparison: Google Analytics history starts '+tcMD(T.days[0],true):''}${todayIn?' · through yesterday, updated overnight':''}</span></div>`;
  // tiles
  h+=`<div class="tctiles">`+TC_TILES.map(([k,l,t])=>{const v=tcM[k](cur),p=cmp?tcM[k](cmp):null;
   const sub=k==='visits'?`${fmtN(cur[1])} bots removed (${cur[0]?Math.round(cur[1]/cur[0]*100):0}%)`:k==='conv'?`${fmtN(cur[11])} orders ÷ ${fmtN(cur[2])} visits`:k==='orders'?(cur[11]&&cur[6]!==cur[11]?`Google saw ${fmtN(cur[6])}`:'from Shopify'):k==='sales'?(cur[17]?fmtN(cur[17])+' items sold':'before tax and shipping'):k==='cart'?fmtN(cur[4])+' add to bags':k==='aov'?(cur[11]&&cur[17]?(cur[17]/cur[11]).toFixed(1)+' items per order':''):k==='ppv'?(v==null?'product costs or ad spend not loaded yet':`${fmt$(cur[12])} sales − ${fmt$(cur[15])} product cost − ${fmt$(cur[18])} card fees and shipping − ${fmt$(cur[16])} ads = ${cur[12]-cur[15]-cur[16]-cur[18]<0?'−':''}${fmt$(Math.abs(cur[12]-cur[15]-cur[16]-cur[18]))}`):'';
@@ -1895,13 +1897,14 @@ Object.assign(TIP,{pa_tab:'One honest return on ad spend. Spend comes from Meta.
  pa_l12p:'Day 1 profit plus the profit expected from each new customer over the next 12 months (after product cost, card fees and shipping), divided by Meta spend. 1.00x means the ads pay for themselves within a year.',
  pa_google:'Google Ads, from Google Analytics. Shopify cannot see Google Ads orders, so this row uses Google\'s own cost and purchase counts.'});
 let PAS=Object.assign({p:'7d',m:'roas',cmp:'prev'},(()=>{try{return JSON.parse(localStorage.getItem('alyth_pa')||'null')}catch(e){return null}})()||{});
-const PA_PRESETS=[['today','Today'],['yest','Yesterday'],['7d','Last 7 days'],['30d','Last 30 days'],['custom','Custom']];
+if(PAS.p==='today')PAS.p='yest';   // a saved Today view opens on Yesterday now
+const PA_PRESETS=[['yest','Yesterday'],['7d','Last 7 days'],['30d','Last 30 days'],['custom','Custom']];
 const PA_TILES=[['roas','Tracked ROAS','pa_roas'],['spend','Meta spend','pa_spend'],['rev','Tracked revenue','pa_trev'],['orders','Tracked orders','pa_torders'],['cpo','Cost per tracked order','pa_cpo'],['cpc','Cost per click','pa_cpc'],['spc','Sales per click','pa_spc'],['ppc','Profit per click','pa_ppc']];
 // Bryan 2026-11-26: "sales and profit per click in addition to cost per click ... per unique visitor". A click here is a person who
 // clicked (Meta's unique link clicks, whole account, once a day): o.uc. Raw link clicks stay in o.clicks.
 function paSave(){try{localStorage.setItem('alyth_pa',JSON.stringify(PAS))}catch(e){}}
-function paRange(P){const last=P.days[P.days.length-1],first=P.days[0],yest=tcAdd(last,-1);let a,b;const p=PAS.p;
- if(p==='today'){a=b=last}else if(p==='yest'){a=b=yest}else if(p==='custom'){a=PAS.a||tcAdd(yest,-6);b=PAS.b||yest}else{const n=p==='30d'?30:7;b=yest;a=tcAdd(b,-(n-1))}
+function paRange(P){const last=P.days[P.days.length-1],first=P.days[0],yest=last;let a,b;const p=PAS.p;
+ if(p==='today'||p==='yest'){a=b=yest}else if(p==='custom'){a=PAS.a||tcAdd(yest,-6);b=PAS.b||yest}else{const n=p==='30d'?30:7;b=yest;a=tcAdd(b,-(n-1))}
  if(a<first)a=first;if(b>last)b=last;if(a>b)a=b;const n=tcN(a,b);let cb=tcAdd(a,-1),ca=tcAdd(cb,-(n-1));const ok=PAS.cmp!=='none'&&ca>=first;
  return {a,b,n,last,first,ca:ok?ca:null,cb:ok?cb:null};}
 function paSet(k,v){PAS[k]=v;if(k==='p'&&v==='custom'&&!PAS.a){const R=paRange(D.pa);PAS.a=R.a;PAS.b=R.b;}paSave();renderPaid();}
@@ -1981,7 +1984,7 @@ function renderPaid(){tcCss();paCss();const P=D.pa;$('#sub').textContent='';$('#
  h+=`<div class="tcbar"><div class="pills">`+PA_PRESETS.map(([k,l])=>`<button class="pl ${PAS.p===k?'on':''}" onclick="paSet('p','${k}')">${l}</button>`).join('')+`</div>`;
  if(PAS.p==='custom')h+=`<input type="date" value="${tcISO(R.a)}" min="${tcISO(R.first)}" max="${tcISO(R.last)}" onchange="paDate('a',this.value)"> to <input type="date" value="${tcISO(R.b)}" min="${tcISO(R.first)}" max="${tcISO(R.last)}" onchange="paDate('b',this.value)">`;
  h+=`<select onchange="paSet('cmp',this.value)"><option value="prev" ${PAS.cmp!=='none'?'selected':''}>vs. previous period</option><option value="none" ${PAS.cmp==='none'?'selected':''}>no comparison</option></select>`;
- h+=`<span class="rng"><b style="color:var(--ink)">${rl}</b>${cl?' vs '+cl:PAS.cmp!=='none'?' · no earlier period to compare, history starts '+tcMD(R.first,true):''}${todayIn?' · today is partial, as of the last pull':''}</span></div>`;
+ h+=`<span class="rng"><b style="color:var(--ink)">${rl}</b>${cl?' vs '+cl:PAS.cmp!=='none'?' · no earlier period to compare, history starts '+tcMD(R.first,true):''}${todayIn?' · through yesterday, updated overnight':''}</span></div>`;
  // tiles: click one to chart it
  h+=`<div class="tctiles">`+PA_TILES.map(([k,l,t])=>{const v=paMet[k](cur),p=prv?paMet[k](prv):null;
   const sub=k==='roas'?verdict+' Break-even is about '+be[0]+'x to '+be[1]+'x'+(beUp?(nDisc?` for these orders (${be0[0]}x to ${be0[1]}x without codes; ${nDisc} of ${T.length} used a discount code).`:' for these orders.'):'.'):k==='spend'?fmtN(clicks)+' link clicks':k==='rev'?'after discounts, returns not subtracted':k==='orders'?(T.length?'avg order '+paM(tRev/T.length):'from a Meta ad link'):k==='cpo'?(T.length?'in ad spend for each order':'no tracked orders yet')
@@ -2071,7 +2074,7 @@ function renderPaid(){tcCss();paCss();const P=D.pa;$('#sub').textContent='';$('#
  // day by day numbers, folded because the charts carry them
  const dl=[];for(let d=R.b;d>=R.a;d=tcAdd(d,-1))dl.push(d);
  h+=`<div class="dsec"><details class="pad"><summary>${hd('Day by day numbers','pa_byday')}</summary><div class="pascroll"><table class="patb"><tr><th class="tl">Day</th><th>Spend</th><th>Tracked orders</th><th>Tracked revenue</th><th>ROAS</th><th>Likely orders</th></tr>`;
- dl.forEach(d=>{const o=paAgg(P,d,d);h+=`<tr><td class="tl">${tcD(d).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'})}${d===R.last?' <span class="sm">(so far)</span>':''}</td><td>${paM(o.spend)}</td><td>${o.n||''}</td><td>${o.n?paM(o.rev):''}</td><td>${o.spend?paX(o.rev/o.spend):''}</td><td>${o.ln||''}</td></tr>`;});
+ dl.forEach(d=>{const o=paAgg(P,d,d);h+=`<tr><td class="tl">${tcD(d).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'})}</td><td>${paM(o.spend)}</td><td>${o.n||''}</td><td>${o.n?paM(o.rev):''}</td><td>${o.spend?paX(o.rev/o.spend):''}</td><td>${o.ln||''}</td></tr>`;});
  if(dl.length>1)h+=`<tr class="tot"><td class="tl">Total</td><td>${paM(spend)}</td><td>${T.length}</td><td>${paM(tRev)}</td><td>${paX(roas)}</td><td>${L.length||''}</td></tr>`;
  h+=`</table></div></details></div>`;
  // check against other tools
