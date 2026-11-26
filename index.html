@@ -314,7 +314,7 @@ function pubFit(){const P=$('#panel');$('#cards').innerHTML='';const q=(PUB.q||'
  h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:10px">'+D.pub.rows.filter(r=>!q||r.t.toLowerCase().includes(q)||((live[r.h]||{}).notes||'').toLowerCase().includes(q)).map(r=>{const l=live[r.h],cur=PUB.drafts[r.h]!=null?PUB.drafts[r.h]:(l&&l.fit!=null?+l.fit:D.pub.fit[r.h]),mds=PUB.mdrafts[r.h]||{},dirty=PUB.drafts[r.h]!=null||Object.keys(mds).length>0,ml=l?pubLines(l.notes):[],mh=ml.length?`<div style="margin-top:8px;display:grid;gap:4px">${ml.map(x=>{const d=mds[x.k],v=d||x.size;return `<label style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px"><span style="min-width:0">${fbEsc(x.k)}${d?` <span style="color:#175cd3">was ${x.size}</span>`:''}</span><select data-h="${r.h}" data-k="${fbEsc(x.k)}" onchange="pubSize(this)" aria-label="Size ${fbEsc(x.k)} wears" style="font:inherit;font-size:12.5px;padding:3px 4px;border:1px solid ${d?'#175cd3':'var(--line)'};border-radius:6px">${Object.keys(PUBSHORT).map(s=>`<option ${s===v?'selected':''}>${s}</option>`).join('')}</select></label>`}).join('')}</div>`:'';return `<div style="border:1px solid ${dirty?'#175cd3':'var(--line)'};border-radius:10px;padding:10px;display:grid;grid-template-columns:48px 1fr;gap:10px"><div style="width:48px;height:64px;border-radius:6px;background:#eee center/cover${r.img?` url('${r.img}')`:''}"></div><div><b style="font-size:13.5px">${fbEsc(r.t)}</b><div class="fbs">${r.g==='m'?"Men's":"Women's"}${r.n?' · <span title="The fit text written in the product before fit picks existed. The product page shows only the pick, so this text is no longer shown where a pick exists.">old fit text, not shown on the site: '+fbEsc(r.n)+'</span>':''}${dirty?' · <span style="color:#175cd3">not published</span>':''}</div><div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">${[-2,-1,0,1,2].map(v=>`<button onclick="pubPick('${r.h}',${v})" style="border:1px solid ${cur===v?'#111':'var(--line)'};background:${cur===v?'#111':'#fff'};color:${cur===v?'#fff':'#333'};border-radius:7px;padding:4px 7px;font:inherit;font-size:12px;cursor:pointer">${PUBLBL[v]}</button>`).join('')}</div>${mh}</div></div>`}).join('')+'</div>';P.innerHTML=h;}
 async function pubSize(e){const h=e.dataset.h,k=e.dataset.k,v=e.value,l=PUB.prods.find(p=>p.handle===h),x=l&&pubLines(l.notes).find(y=>y.k===k),md=PUB.mdrafts[h]=PUB.mdrafts[h]||{};if(x&&x.size===v)delete md[k];else md[k]=v;if(!Object.keys(md).length)delete PUB.mdrafts[h];pubFit();try{await pubShopSet('model_drafts',PUB.mdrafts);pubBuild();rvPaint();}catch(err){alert('Could not save: '+err.message)}}
 async function pubPick(h,v){const l=PUB.prods.find(p=>p.handle===h);if(l&&l.fit!=null&&+l.fit===v)delete PUB.drafts[h];else if(!l||l.fit==null){if(D.pub.fit[h]===v)delete PUB.drafts[h];else PUB.drafts[h]=v}else PUB.drafts[h]=v;pubFit();try{await pubShopSet('fit_drafts',PUB.drafts);pubBuild();rvPaint();}catch(e){alert('Could not save: '+e.message)}}
-</script><script src="data.enc.js?v=1795702699"></script><script>/* All user-facing copy lives here. Functions are templates, not financial calculations. */
+</script><script src="data.enc.js?v=1795714988"></script><script>/* All user-facing copy lives here. Functions are templates, not financial calculations. */
 const CFX_COPY = {
  brand:'ALYTH / ACTIVE',private:'Private operations',title:'Cash flow',subtitle:'See what earns, what leaves, and what is left.',range:'Time range',group:'Group by',month:'Month',quarter:'Quarter',year:'Year',from:'From',to:'To',start:'Start',end:'End',custom:'Custom range',
  presets:{this:'This month',last:'Last month',last3:'Last 3 months',last12:'Last 12 months',ytd:'Year to date',next3:'Next 3 months',next12:'Next 12 months',custom:'Custom range'},
@@ -1172,6 +1172,9 @@ Object.assign(TIP,{
  tc_sales:'Online sales from Shopify, before tax and shipping.',
  tc_cart:'Add to bag clicks per 100 real visits (Google Analytics). If this falls, look at product pages first.',
  tc_rpv:'Online sales divided by real visits: what one real visit is worth. Useful for judging ads: an ad that costs more per click than this loses money.',
+ tc_aov:'Online sales divided by online orders, before tax and shipping, with how many items went into an average order.',
+ tc_ppv:'What one real visit earned after the two biggest costs: online sales, minus what we paid for the products in those orders, minus ad spend (Meta and Google) in the same dates, divided by real visits. Shipping, card fees and returns are not taken out. It can be negative when ads cost more than the orders earned.',
+ tc_ltv:'What an average customer has spent with Alyth in total, for customers whose first order was online. Every order they placed since counts, online or in a store, after discounts and returns. This is an all-time number, so it does not move with the dates you pick. Recounted once a week.',
  tc_ladder:'The same orders divided three ways. Shopify divides by every visit, bots included. True conversion takes bots out. Shopper conversion counts only people who looked around (10+ seconds, 2+ pages, or bought).',
  tc_chart:'Click a tile above to change what the chart shows. The solid line is the period you picked; the dashed line is the comparison period, lined up from the same starting point.',
  tc_why:'Plain-language read of the period you picked against the comparison period, worked out on the page from the same numbers.',
@@ -1198,13 +1201,15 @@ function tcRange(T){const last=T.days[T.days.length-1],yest=tcAdd(last,-1);let a
  const n=tcN(a,b);let ca=null,cb=null;
  if(TCS.cmp==='prev'){cb=tcAdd(a,-1);ca=tcAdd(cb,-(n-1))}else if(TCS.cmp==='year'){ca=tcAdd(a,-364);cb=tcAdd(b,-364)}
  const cmpOk=ca&&ca>=T.days[0];return {a,b,n,ca:cmpOk?ca:null,cb:cmpOk?cb:null,last};}
-// tot columns: 0 all, 1 bots, 2 real, 3 engaged, 4 add to bags, 5 checkouts, 6 GA orders, 7 GA sales, 8 bots-screen, 9 bots-overseas, 10 bots-no cookie, 11 Shopify orders, 12 Shopify sales, 13 bots-swarm, 14 bots-fake phones
-function tcSum(T,a,b){const o=new Array(15).fill(0);for(let i=0;i<T.days.length;i++){const d=T.days[i];if(d<a)continue;if(d>b)break;const r=T.tot[i];for(let j=0;j<15;j++)o[j]+=r[j]||0;}return o;}
+// tot columns: 0 all, 1 bots, 2 real, 3 engaged, 4 add to bags, 5 checkouts, 6 GA orders, 7 GA sales, 8 bots-screen, 9 bots-overseas, 10 bots-no cookie, 11 Shopify orders, 12 Shopify sales, 13 bots-swarm, 14 bots-fake phones,
+// 15 product cost of the Shopify orders, 16 ad spend (Meta + Google), 17 items sold   (2026-11-26: profit per real visit, average order)
+function tcSum(T,a,b){const o=new Array(18).fill(0);for(let i=0;i<T.days.length;i++){const d=T.days[i];if(d<a)continue;if(d>b)break;const r=T.tot[i];for(let j=0;j<18;j++)o[j]+=r[j]||0;}return o;}
 function tcSeg(T,key,a,b){const A=T.segs[key];const o=[0,0,0,0,0,0];if(!A)return o;for(let i=0;i<T.days.length;i++){const d=T.days[i];if(d<a)continue;if(d>b)break;for(let j=0;j<6;j++)o[j]+=A[i][j]||0;}return o;}
-const tcM={conv:o=>o[2]?o[11]/o[2]:null,visits:o=>o[2],orders:o=>o[11],sales:o=>o[12],cart:o=>o[2]?o[4]/o[2]*100:null,rpv:o=>o[2]?o[12]/o[2]:null,
+const tcM={conv:o=>o[2]?o[11]/o[2]:null,visits:o=>o[2],orders:o=>o[11],sales:o=>o[12],cart:o=>o[2]?o[4]/o[2]*100:null,rpv:o=>o[2]?o[12]/o[2]:null,aov:o=>o[11]?o[12]/o[11]:null,
+ ppv:o=>{const P=D.sa&&D.sa.tc&&D.sa.tc.profit;return P&&P.cost&&P.spend_from&&o[2]&&o.length>16?(o[12]-(o[15]||0)-(o[16]||0))/o[2]:null},
  shopper:o=>o[3]?o[11]/o[3]:null,shopify:o=>o[0]?o[11]/o[0]:null,bots:o=>o[0]?o[1]/o[0]:null};
-const tcF={conv:x=>x==null?'–':(x*100).toFixed(2)+'%',visits:x=>x==null?'–':fmtN(x),orders:x=>x==null?'–':fmtN(x),sales:x=>x==null?'–':fmt$(x),cart:x=>x==null?'–':x.toFixed(1),rpv:x=>x==null?'–':'$'+x.toFixed(2)};
-const TC_TILES=[['conv','True conversion','tc_conv'],['visits','Real visits','tc_visits'],['orders','Online orders','tc_orders'],['sales','Online sales','tc_sales'],['cart','Add to bags per 100 visits','tc_cart'],['rpv','Sales per real visit','tc_rpv']];
+const tcF={conv:x=>x==null?'–':(x*100).toFixed(2)+'%',visits:x=>x==null?'–':fmtN(x),orders:x=>x==null?'–':fmtN(x),sales:x=>x==null?'–':fmt$(x),cart:x=>x==null?'–':x.toFixed(1),rpv:x=>x==null?'–':'$'+x.toFixed(2),aov:x=>x==null?'–':fmt$(x),ppv:x=>x==null?'–':(x<0?'−':'')+'$'+Math.abs(x).toFixed(2)};
+const TC_TILES=[['conv','True conversion','tc_conv'],['visits','Real visits','tc_visits'],['orders','Online orders','tc_orders'],['sales','Online sales','tc_sales'],['aov','Average order','tc_aov'],['cart','Add to bags per 100 visits','tc_cart'],['rpv','Sales per real visit','tc_rpv'],['ppv','Profit per real visit','tc_ppv']];
 function tcChg(c,p,pts){if(c==null||p==null||!p)return '';const r=(c-p)/p;const up=r>=0;return `<span class="tcchg ${Math.abs(r)<0.005?'':up?'up':'dn'}">${up?'↑':'↓'} ${Math.abs(r*100).toFixed(Math.abs(r)<0.1?1:0)}%</span>`;}
 // buckets: hour (1-2 days), day (up to 45), week (up to 180), month
 function tcBuckets(T,a,b,gran){const out=[];
@@ -1218,19 +1223,20 @@ function tcBuckets(T,a,b,gran){const out=[];
  let d=a;while(d<=b){const m=d.slice(0,6);const nx=tcD(m+'01');nx.setUTCMonth(nx.getUTCMonth()+1);let e=tcAdd(tcS(nx),-1);if(e>b)e=b;
   out.push({k:m,lab:tcD(d).toLocaleDateString('en-US',{month:'short',year:'numeric',timeZone:'UTC'}),o:tcSum(T,d,e)});d=tcS(nx);}return out;}
 const tcHr=h=>(h%12||12)+(h<12?' am':' pm');
-function tcGran(T,R){if(R.n<=2&&T.hours.length&&T.hours[0].slice(0,8)<=R.a)return 'hour';return R.n<=45?'day':R.n<=180?'week':'month';}
+function tcGran(T,R){if(TCS.m!=='ppv'&&R.n<=2&&T.hours.length&&T.hours[0].slice(0,8)<=R.a)return 'hour';return R.n<=45?'day':R.n<=180?'week':'month';}
 let TC_CH=null;
 function tcChart(T,R){const m=TCS.m,gran=tcGran(T,R);const cur=tcBuckets(T,R.a,R.b,gran);const cmp=R.ca?tcBuckets(T,R.ca,R.cb,gran):[];
  const W=820,H=240,L=54,Rr=14,Tp=14,B=30,iw=W-L-Rr,ih=H-Tp-B,n=cur.length;TC_CH={cur,cmp,m,gran};
  const v=b=>b&&b.o?tcM[m](b.o):null;const cv=cur.map(v),pv=cmp.map(v);
  const botv=cur.map(b=>b&&b.o?b.o[1]:null);
  let mx=Math.max(1e-9,...cv.filter(x=>x!=null),...pv.filter(x=>x!=null),...(m==='visits'?cur.map((b,i)=>(cv[i]||0)+(botv[i]||0)):[]));
- if(mx<=1e-9)mx={conv:0.01,visits:10,orders:2,sales:100,cart:10,rpv:1}[m]||1;
- const nice=x=>{const e=Math.pow(10,Math.floor(Math.log10(x)));const f=x/e;return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*e};const stp=nice(mx/4);mx=stp*Math.max(1,Math.ceil(mx*1.02/stp));const nT=Math.round(mx/stp);
- const X=i=>L+(n<=1?iw/2:i*iw/(n-1)),Y=x=>Tp+ih-(x/mx)*ih,bw=Math.max(2,iw/Math.max(n,1)*0.7);
- const dp=v=>{const s=v*(m==='conv'?100:1);return s===0?0:Math.max(0,Math.min(2,-Math.floor(Math.log10(stp*(m==='conv'?100:1))+1e-9)))};const yl=x=>m==='conv'?(x*100).toFixed(dp(x))+'%':m==='sales'?'$'+(x>=1000?(x/1000).toFixed(x>=1e4?0:1)+'k':Math.round(x)):m==='rpv'?'$'+x.toFixed(dp(x)):m==='cart'?x.toFixed(dp(x)):fmtN(x);
+ let mn=Math.min(0,...cv.filter(x=>x!=null),...pv.filter(x=>x!=null));   // only profit per visit goes below zero
+ if(mx<=1e-9)mx=mn<0?0:({conv:0.01,visits:10,orders:2,sales:100,cart:10,rpv:1,aov:100,ppv:1}[m]||1);
+ const nice=x=>{const e=Math.pow(10,Math.floor(Math.log10(x)));const f=x/e;return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*e};const stp=nice((mx-mn)/4);mx=stp*Math.max(1,Math.ceil(mx*1.02/stp));mn=mn<0?-stp*Math.ceil(-mn*1.02/stp):0;const nT=Math.round(mx/stp),k0=Math.round(mn/stp);
+ const X=i=>L+(n<=1?iw/2:i*iw/(n-1)),Y=x=>Tp+ih-((x-mn)/(mx-mn))*ih,bw=Math.max(2,iw/Math.max(n,1)*0.7);
+ const dp=v=>{const s=v*(m==='conv'?100:1);return s===0?0:Math.max(0,Math.min(2,-Math.floor(Math.log10(stp*(m==='conv'?100:1))+1e-9)))};const yl=x=>m==='conv'?(x*100).toFixed(dp(x))+'%':m==='sales'||m==='aov'?'$'+(x>=1000?(x/1000).toFixed(x>=1e4?0:1)+'k':Math.round(x)):m==='rpv'||m==='ppv'?(x<0?'−':'')+'$'+Math.abs(x).toFixed(dp(x)):m==='cart'?x.toFixed(dp(x)):fmtN(x);
  let s=`<svg viewBox="0 0 ${W} ${H}" class="tcsvg" role="img" aria-label="Chart">`;
- for(let k=0;k<=nT;k++){const yv=stp*k,y=Y(yv);s+=`<line x1="${L}" x2="${W-Rr}" y1="${y}" y2="${y}" stroke="#ebedef"/><text x="${L-8}" y="${y+4}" text-anchor="end" font-size="11" fill="#6b7177">${yl(yv)}</text>`;}
+ for(let k=k0;k<=nT;k++){const yv=stp*k,y=Y(yv);s+=`<line x1="${L}" x2="${W-Rr}" y1="${y}" y2="${y}" stroke="${mn<0&&k===0?'#9aa0a6':'#ebedef'}"/><text x="${L-8}" y="${y+4}" text-anchor="end" font-size="11" fill="#6b7177">${yl(yv)}</text>`;}
  const step=Math.max(1,Math.ceil(n/7));for(let i=0;i<n;i+=step){if(i>0&&i!==n-1&&n-1-i<step*0.6)continue;s+=`<text x="${X(i)}" y="${H-10}" text-anchor="${i===0&&n>1?'start':i===n-1&&n>1?'end':'middle'}" font-size="11" fill="#6b7177">${gran==='hour'?cur[i].lab.replace(/^\w+ \d+ /,''):gran==='week'?cur[i].lab.replace('Week of ',''):cur[i].lab}</text>`;}
  if(n>1&&(n-1)%step!==0)s+=`<text x="${X(n-1)}" y="${H-10}" text-anchor="end" font-size="11" fill="#6b7177">${gran==='hour'?cur[n-1].lab.replace(/^\w+ \d+ /,''):gran==='week'?cur[n-1].lab.replace('Week of ',''):cur[n-1].lab}</text>`;
  const path=(vals)=>{let d='',pen=false;vals.forEach((x,i)=>{if(x==null){pen=false;return}d+=(pen?'L':'M')+X(i).toFixed(1)+','+Y(x).toFixed(1);pen=true});return d};
@@ -1238,7 +1244,7 @@ function tcChart(T,R){const m=TCS.m,gran=tcGran(T,R);const cur=tcBuckets(T,R.a,R
   if(cmp.length)s+=`<path d="${path(pv)}" fill="none" stroke="#8a9096" stroke-width="1.6" stroke-dasharray="4 4"/>`;}
  else{if(cmp.length)s+=`<path d="${path(pv)}" fill="none" stroke="#8a9096" stroke-width="1.6" stroke-dasharray="4 4"/>`;
   const pd=path(cv);if(pd){const fi=cv.findIndex(x=>x!=null),li=cv.length-1-[...cv].reverse().findIndex(x=>x!=null);
-   if(!cv.slice(fi,li+1).includes(null))s+=`<path d="${pd}L${X(li)},${Tp+ih}L${X(fi)},${Tp+ih}Z" fill="#1f6f5f" opacity=".07"/>`;
+   if(!cv.slice(fi,li+1).includes(null))s+=`<path d="${pd}L${X(li)},${Y(0)}L${X(fi)},${Y(0)}Z" fill="#1f6f5f" opacity=".07"/>`;
    s+=`<path d="${pd}" fill="none" stroke="#1f6f5f" stroke-width="2.2" stroke-linejoin="round"/>`;
    if(n<=45)cv.forEach((x,i)=>{if(x!=null)s+=`<circle cx="${X(i)}" cy="${Y(x)}" r="${n<=14?3:2}" fill="#1f6f5f"/>`});}}
  s+=`<line id="tcx" x1="0" x2="0" y1="${Tp}" y2="${Tp+ih}" stroke="#1a1a1a" stroke-width="1" opacity="0"/>`;
@@ -1269,6 +1275,8 @@ function tcCss(){if(document.getElementById('tccss'))return;const st=document.cr
 .tcwhy li{margin:5px 0;line-height:1.45}.tcheat{border-collapse:separate;border-spacing:2px;font-size:11px}.tcheat td{width:26px;height:20px;border-radius:3px;text-align:center}.tcheat th{font-weight:500;color:var(--mut);padding:0 4px;text-align:right}
 .tcseg button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer;margin-right:4px}.tcseg button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 @media(max-width:600px){.tctile .v{font-size:21px}}`;document.head.appendChild(st);}
+// Lifetime value is an all-time number: it sits with the tiles but does not follow the date picker and has no chart.
+function tcLtvTile(T){const L=T.ltv;if(!L)return '';return `<div class="tctile" style="cursor:default"><div class="l">${hd('Lifetime value per customer','tc_ltv')}</div><div class="v">${fmt$(L.ltv)}</div><div class="s">all time, first order online</div><div class="s">${L.orders.toFixed(1)} orders each · ${fmt$(L.profit)} after product cost · ${Math.round(L.repeat*100)}% buy again</div></div>`;}
 function tcRender(){const box=document.getElementById('tcbox');if(!box)return;fbKeepOn(box);const T=D.sa&&D.sa.tc;if(!T){box.innerHTML='';return;}tcCss();
  const R=tcRange(T),cur=tcSum(T,R.a,R.b),cmp=R.ca?tcSum(T,R.ca,R.cb):null;
  const rl=R.a===R.b?tcMD(R.a,true):tcMD(R.a)+' – '+tcMD(R.b,true),cl=R.ca?(R.ca===R.cb?tcMD(R.ca,true):tcMD(R.ca)+' – '+tcMD(R.cb,true)):'';
@@ -1279,8 +1287,10 @@ function tcRender(){const box=document.getElementById('tcbox');if(!box)return;fb
  h+=`<span class="rng"><b style="color:var(--ink)">${rl}</b>${cl?' vs '+cl:TCS.cmp!=='none'?' · no comparison: Google Analytics history starts '+tcMD(T.days[0],true):''}${todayIn?' · today is partial (Google lags a few hours)':''}</span></div>`;
  // tiles
  h+=`<div class="tctiles">`+TC_TILES.map(([k,l,t])=>{const v=tcM[k](cur),p=cmp?tcM[k](cmp):null;
-  const sub=k==='visits'?`${fmtN(cur[1])} bots removed (${cur[0]?Math.round(cur[1]/cur[0]*100):0}%)`:k==='conv'?`${fmtN(cur[11])} orders ÷ ${fmtN(cur[2])} visits`:k==='orders'?(cur[11]&&cur[6]!==cur[11]?`Google saw ${fmtN(cur[6])}`:'from Shopify'):k==='sales'?(cur[11]?'avg order '+fmt$(cur[12]/cur[11]):''):k==='cart'?fmtN(cur[4])+' add to bags':'';
-  return `<button class="tctile ${TCS.m===k?'on':''}" onclick="tcSet('m','${k}')"><div class="l">${hd(l,t)}</div><div class="v">${tcF[k](v)}</div><div class="s">${cmp?tcChg(v,p)+'<span>was '+tcF[k](p)+'</span>':''}</div><div class="s">${sub}</div></button>`;}).join('')+`</div>`;
+  const sub=k==='visits'?`${fmtN(cur[1])} bots removed (${cur[0]?Math.round(cur[1]/cur[0]*100):0}%)`:k==='conv'?`${fmtN(cur[11])} orders ÷ ${fmtN(cur[2])} visits`:k==='orders'?(cur[11]&&cur[6]!==cur[11]?`Google saw ${fmtN(cur[6])}`:'from Shopify'):k==='sales'?(cur[17]?fmtN(cur[17])+' items sold':'before tax and shipping'):k==='cart'?fmtN(cur[4])+' add to bags':k==='aov'?(cur[11]&&cur[17]?(cur[17]/cur[11]).toFixed(1)+' items per order':''):k==='ppv'?(v==null?'product costs or ad spend not loaded yet':`${fmt$(cur[12])} sales − ${fmt$(cur[15])} product cost − ${fmt$(cur[16])} ads = ${cur[12]-cur[15]-cur[16]<0?'−':''}${fmt$(Math.abs(cur[12]-cur[15]-cur[16]))}`):'';
+  // a percent change means nothing when profit crosses zero, so profit per visit shows the direction only
+  const chg=!cmp?'':k==='ppv'?(v==null||p==null?'':(p>0&&v>0?tcChg(v,p):`<span class="tcchg ${v>=p?'up':'dn'}">${v>=p?'↑':'↓'}</span>`)+'<span>was '+tcF[k](p)+'</span>'):tcChg(v,p)+'<span>was '+tcF[k](p)+'</span>';
+  return `<button class="tctile ${TCS.m===k?'on':''}" onclick="tcSet('m','${k}')"><div class="l">${hd(l,t)}</div><div class="v"${k==='ppv'&&v<0?' style="color:var(--red)"':''}>${tcF[k](v)}</div><div class="s">${chg}</div><div class="s">${sub}</div></button>`;}).join('')+tcLtvTile(T)+`</div>`;
  // chart
  const ml=Object.fromEntries(TC_TILES.map(t=>[t[0],t[1]]));const gran=tcGran(T,R);
  h+=`<div class="dsec"><div class="dh">${hd(ml[TCS.m]+' by '+gran,'tc_chart')}</div><div class="legend"><span><i class="ln" style="border-color:#1f6f5f"></i>${rl}</span>${R.ca?`<span><i class="ln dsh"></i>${cl}</span>`:''}${TCS.m==='visits'?'<span><i style="background:#e3e5e7"></i>bots (removed)</span>':''}</div><div class="tcwrap">${tcChart(T,R)}<div id="tctip"></div></div></div>`;
@@ -1327,6 +1337,8 @@ function tcWhy(T,R,c,p){const W=[],pc=x=>(x*100).toFixed(2)+'%',sg=x=>(x>=0?'+':
    if(dk[4]<30)s+=` That gap rests on only ${fmtN(dk[4])} desktop orders, too few to size. Pick Last 30 days or longer before acting on it.`;
    else if(extra>=2)s+=` <b>Phones convert lower:</b> closing half the gap with desktop would have meant about ${extra} more orders in these dates. Part of the gap is who visits, not the phone site: most phone visits are cold ad clicks, and Google misses some orders paid inside Instagram and Facebook. Compare inside one channel in the table below before acting.`;}
   W.push(s);}
+ const pv_=tcM.ppv(c);if(pv_!=null&&c[11]){const net=c[12]-c[15]-c[16],pp=p&&p[2]?tcM.ppv(p):null;
+  W.push(`After product cost (${fmt$(c[15])}) and ad spend (${fmt$(c[16])}), these dates ${net>=0?'made':'lost'} <b>${fmt$(Math.abs(net))}</b> on ${fmt$(c[12])} of online sales: <b>${tcF.ppv(pv_)} per real visit</b>${pp!=null?`, ${pv_>=pp?'up':'down'} from ${tcF.ppv(pp)}`:''}. Shipping, card fees and returns are not taken out.`);}
  if(c[11]>=5&&c[6]<c[11]*0.85)W.push(`Google Analytics only saw ${fmtN(c[6])} of Shopify's ${fmtN(c[11])} online orders (${Math.round(c[6]/c[11]*100)}%). The tiles and the channel table use Shopify's count; the phone vs desktop split uses Google's.`);
  if(c[11]<30)W.push(`With ${fmtN(c[11])} orders, a swing of ${Math.max(2,Math.round(Math.sqrt(c[11])))} orders either way is normal noise. For a steadier read, try Last 30 or 90 days.`);
  (T.notes||[]).forEach(nt=>{if(nt.b>=R.a&&nt.a<=R.b)W.push('Note: '+fbEsc(nt.t)+'.');if(R.ca&&nt.b>=R.ca&&nt.a<=R.cb)W.push('Note on the comparison period: '+fbEsc(nt.t)+'.')});
